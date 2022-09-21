@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>Xamarin.FFmpegKit.Video.Android</id>
-    <title>Xamarin bindings to the native Android FFmpekKit Video SDK.</title>
+    <id>Xamarin.FFmpegKit.FullGpl.Android</id>
+    <title>Xamarin bindings to the native Android FFmpekKit Video FullGpl SDK.</title>
     <version>4.5.1</version>
     <authors>s.bokatuk</authors>
     <owners>s.bokatuk</owners>
@@ -11,7 +11,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Xamarin bindings to the native FFmpegKit Video SDK.</description>
     <summary>Xamarin bindings to the native FFmpegKit Video SDK.</summary>
-    <tags>ffmpeg ffmpegkit video SDK Xamarin Android Xamarin.Android MonoTouch Binding</tags>
+    <tags>ffmpeg ffmpegkit video SDK Xamarin Android fullgpl full-gpl FullGpl Xamarin.Android MonoTouch Binding</tags>
     <icon>images/icon.png</icon>
     <releaseNotes>
 

@@ -10,7 +10,7 @@
     <TemplateGuid>{77efb91c-a7e9-4b0e-a7c5-31eeec3c6d46}</TemplateGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FFmpegKit.Android</RootNamespace>
+    <RootNamespace>Ffmpegkit.Droid</RootNamespace>
     <AssemblyName>FFmpegKit.Android</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <Deterministic>True</Deterministic>
@@ -56,6 +56,11 @@
     <TransformFile Include="Transforms\Metadata.xml" />
     <TransformFile Include="Transforms\EnumFields.xml" />
     <TransformFile Include="Transforms\EnumMethods.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedJar Include="Jars\smart-exception-logback-0.2.1.jar" />
+    <EmbeddedJar Include="Jars\smart-exception-common-0.2.1.jar" />
+    <EmbeddedJar Include="Jars\smart-exception-java-0.2.1.jar" />
   </ItemGroup>
   <ItemGroup>
     <LibraryProjectZip Include="Jars\ffmpeg-kit-video-4.5.1-1.LTS.aar" />
