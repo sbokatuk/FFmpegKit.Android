@@ -2,8 +2,8 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Xamarin.FFmpegKit.Video.Android</id>
-    <title>Xamarin bindings to the native Android FFmpekKit Video SDK.</title>
-    <version>4.5.1</version>
+    <title>Xamarin bindings to the native Android FFmpegKit Video SDK.</title>
+    <version>5.1</version>
     <authors>s.bokatuk</authors>
     <owners>s.bokatuk</owners>
     <license type="expression">MIT</license>
@@ -19,9 +19,14 @@ nuget sources repository:
 https://github.com/sbokatuk/FFmpegKit.Android
 
     </releaseNotes>
+    <dependencies>
+      <group targetFramework="MonoAndroid10" />
+    </dependencies>
   </metadata>
   <files>
-    <file src="lib/MonoAndroid/*.dll" target="lib/MonoAndroid" />
+    <file src="lib/MonoAndroid10/*.dll" target="lib/MonoAndroid10" />
+    <file src="lib/MonoAndroid10/*.pdb" target="lib/MonoAndroid10" />
+    <file src="lib/MonoAndroid10/*.xml" target="lib/MonoAndroid10" />
     <file src="../icon.png" target="images/" />
     <file src="README.txt" target="" />
   </files>
