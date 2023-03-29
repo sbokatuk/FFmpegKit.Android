@@ -58,7 +58,6 @@
     <TransformFile Include="Transforms\EnumMethods.xml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedJar Include="Jars\smart-exception-logback-0.2.1.jar" />
     <EmbeddedJar Include="Jars\smart-exception-common-0.2.1.jar" />
     <EmbeddedJar Include="Jars\smart-exception-java-0.2.1.jar" />
   </ItemGroup>
