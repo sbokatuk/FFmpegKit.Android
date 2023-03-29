@@ -30,19 +30,20 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Video.Android\lib\MonoAndroid\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
+ <ItemGroup>
     <Reference Include="Mono.Android" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -58,13 +59,92 @@
     <TransformFile Include="Transforms\EnumMethods.xml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedJar Include="Jars\smart-exception-logback-0.2.1.jar" />
     <EmbeddedJar Include="Jars\smart-exception-common-0.2.1.jar" />
     <EmbeddedJar Include="Jars\smart-exception-java-0.2.1.jar" />
   </ItemGroup>
-  <ItemGroup>
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-4.5.1-1.LTS.aar" />
+
+  <!-- Set the default FFmpegKitBuildType -->
+  <PropertyGroup>
+    <FFmpegKitBuildType Condition="'$(FFmpegKitBuildType)'==''">Video</FFmpegKitBuildType>
+  </PropertyGroup>
+
+  <!-- For each FFmpegKitBuildType set output path-->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Audio'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Audio.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.Audio.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Full'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Full.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.Full.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'FullGpl'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.FullGpl.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.FullGpl.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Https'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Https.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.Https.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'HttpsGpl'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.HttpsGpl.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.HttpsGpl.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Min'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Min.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.Min.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'MinGpl'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.MinGpl.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.MinGpl.Android</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Video'">
+    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Video.Android\lib\MonoAndroid10\</OutputPath>
+    <AssemblyName>FFmpegKit.Video.Android</AssemblyName>
+  </PropertyGroup>
+  
+
+  <!-- For each FFmpegKitBuildType set correct LibraryProjectZip -->
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Audio'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-5.1.LTS.aar" />
   </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Full'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'FullGpl'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Https'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'HttpsGpl'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Min'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'MinGpl'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-5.1.LTS.aar" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Video'">
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-5.1.LTS.aar" />
+  </ItemGroup>
+
+
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.Bindings.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

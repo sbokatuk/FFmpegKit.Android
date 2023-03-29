@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>Xamarin.FFmpegKit.FullGpl.Android</id>
-    <title>Xamarin bindings to the native Android FFmpegKit FullGpl SDK.</title>
+    <id>Xamarin.FFmpegKit.Min.Android</id>
+    <title>Xamarin bindings to the native Android FFmpegKit Min SDK.</title>
     <version>5.1</version>
     <authors>s.bokatuk</authors>
     <owners>s.bokatuk</owners>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/sbokatuk/FFmpegKit.Android</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Xamarin bindings to the native FFmpegKit FullGpl SDK.</description>
-    <summary>Xamarin bindings to the native FFmpegKit FullGpl SDK.</summary>
-    <tags>ffmpeg ffmpegkit FullGpl SDK Xamarin Android fullgpl full-gpl FullGpl Xamarin.Android MonoTouch Binding</tags>
+    <description>Xamarin bindings to the native FFmpegKit Min SDK.</description>
+    <summary>Xamarin bindings to the native FFmpegKit Min SDK.</summary>
+    <tags>ffmpeg ffmpegkit Min SDK Xamarin Android Xamarin.Android MonoTouch Binding</tags>
     <icon>images/icon.png</icon>
     <releaseNotes>
 
