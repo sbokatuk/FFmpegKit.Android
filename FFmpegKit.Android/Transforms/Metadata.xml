@@ -7,4 +7,21 @@
   <remove-node path="/api/package[@name='android.support.v4.content']/class[@name='CursorLoader']/method[@name='loadInBackground']" />
   -->
   <attr path="/api/package[@name='com.arthenica.ffmpegkit']" name="managedName">Ffmpegkit.Droid</attr>
+
+  <!-- remove field that will be replaced with get methods that become properties once converted -->
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='createTime']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='endTime']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='failStackTrace']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='future']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logCallback']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logRedirectionStrategy']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logs']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='returnCode']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='sessionId']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='startTime']" />
+  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='state']" />
+
+  <!-- rename getName to GetAbiName so that when it becomes a parameter it does not become Name which conflicts with Enum.Name -->  
+  <attr path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='Abi']/method[@name='getName']" name="managedName">GetAbiName</attr>
+
 </metadata>
