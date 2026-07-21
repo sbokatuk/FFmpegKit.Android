@@ -117,6 +117,24 @@ Arguments are the variant, the package version in `./artifacts`, and which of th
 | [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke test, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
 | [`release.yml`](.github/workflows/release.yml) | tag `v*` | Same build and tests at the tag's version, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
 
-Both call the reusable [`build.yml`](.github/workflows/build.yml). Publishing needs a `NUGET_API_KEY` repository secret.
+Both call the reusable [`build.yml`](.github/workflows/build.yml).
+
+### Publishing credentials
+
+Publishing uses [nuget.org Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) — no long-lived API key. Each publish job requests a GitHub OIDC token (`id-token: write`), exchanges it via `NuGet/login@v1` for an API key valid for one hour, and pushes with that.
+
+Setup on nuget.org (**Account → Trusted Publishing**): a policy binds to exactly **one** workflow file, so this repository needs **two**, identical apart from the workflow file name:
+
+| Field | Value |
+| --- | --- |
+| Package Owner | `s.bokatuk` |
+| Repository Owner | `sbokatuk` |
+| Repository | `FFmpegKit.Android` — the name only, not a URL |
+| Workflow File | `pr.yml` for one policy, `release.yml` for the other |
+| Environment | `production` — must match `environment:` on the publish job |
+
+The only repository secret needed is `NUGET_USER`: your nuget.org **profile name** (`s.bokatuk`), not your email address.
+
+Policies created against a private repository start out active for 7 days only; they become permanent after the first successful publish, which supplies the repository and owner IDs that lock the policy down.
 
 Note that prereleases pushed to nuget.org cannot be deleted, only unlisted — every pull request push publishes eight packages.

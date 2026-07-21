@@ -44,9 +44,16 @@ jobs:
     name: publish beta to nuget.org
     needs: [version, build]
     runs-on: ubuntu-latest
-    # Forked pull requests cannot read secrets, so the push would fail with a confusing
-    # authentication error. Those PRs still build and test; only the publish step is skipped.
+    # Forked pull requests get no OIDC token for this repository, so the exchange would fail with
+    # a confusing error. Those PRs still build and test; only the publish step is skipped.
     if: github.event.pull_request.head.repo.full_name == github.repository
+    # Must match the Environment on the nuget.org trusted publishing policy for this workflow.
+    environment: production
+    permissions:
+      contents: read
+      # Lets the job request the OIDC token that nuget.org exchanges for a short-lived API key.
+      # Without it the token request fails silently and the login step gets no key.
+      id-token: write
     steps:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -59,18 +66,20 @@ jobs:
           name: nuget-packages
           path: artifacts
 
+      # Deliberately immediately before the push: the issued key is valid for one hour, and each
+      # OIDC token can be exchanged exactly once.
+      - name: Authenticate to nuget.org
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push to nuget.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          if [ -z "${NUGET_API_KEY}" ]; then
-            echo "::error::NUGET_API_KEY secret is not configured"
-            exit 1
-          fi
           # Symbol packages are pushed automatically alongside each matching .nupkg.
           dotnet nuget push "artifacts/*.nupkg" \
             --source https://api.nuget.org/v3/index.json \
-            --api-key "${NUGET_API_KEY}" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
             --skip-duplicate
 
       - name: Summarise
