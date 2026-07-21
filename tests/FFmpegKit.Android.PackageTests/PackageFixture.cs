@@ -32,7 +32,7 @@ public static class Packages
             : AllVariants)
         .Select(v => new object[] { v });
 
-    public static string PackageId(string variant) => $"Xamarin.FFmpegKit.{variant}.Android";
+    public static string PackageId(string variant) => $"FFmpegKit.Net.{variant}.Android";
 
     /// <summary>
     /// Upstream ships the -gpl variants under GPL-3.0 and the rest under LGPL-3.0. Getting this
@@ -44,7 +44,7 @@ public static class Packages
 
     public static string LicenseExpression(string variant) => $"MIT AND {NativeLicense(variant)}";
 
-    public static string AssemblyName(string variant) => $"FFmpegKit.{variant}.Android";
+    public static string AssemblyName(string variant) => $"FFmpegKit.Net.{variant}.Android";
 
     /// <summary>FullGpl -> full-gpl, HttpsGpl -> https-gpl, Video -> video, ...</summary>
     public static string AarName(string variant) => variant.ToLowerInvariant().Replace("gpl", "-gpl");

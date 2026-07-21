@@ -19,8 +19,15 @@
     -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <CheckEolWorkloads>false</CheckEolWorkloads>
+    <!--
+      The namespace stays Ffmpegkit.Droid even though the package is now FFmpegKit.Net.*. A
+      namespace rooted at "FFmpegKit" containing a type also called FFmpegKit makes every
+      consumer call ambiguous - `FFmpegKit.Execute(...)` resolves the namespace first and fails
+      with "'Execute' does not exist in the namespace 'FFmpegKit'". Renaming it is a breaking
+      source change that would buy nothing.
+    -->
     <RootNamespace>Ffmpegkit.Droid</RootNamespace>
-    <AssemblyName>FFmpegKit.$(FFmpegKitBuildType).Android</AssemblyName>
+    <AssemblyName>FFmpegKit.Net.$(FFmpegKitBuildType).Android</AssemblyName>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -90,11 +97,11 @@
   <!-- Packaging -->
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <PackageId>Xamarin.FFmpegKit.$(FFmpegKitBuildType).Android</PackageId>
-    <Title>Xamarin bindings to the native Android FFmpegKit $(FFmpegKitBuildType) SDK.</Title>
-    <Description>Xamarin bindings to the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion) for .NET for Android. The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
+    <PackageId>FFmpegKit.Net.$(FFmpegKitBuildType).Android</PackageId>
+    <Title>.NET for Android bindings for the native FFmpegKit $(FFmpegKitBuildType) SDK.</Title>
+    <Description>.NET for Android / .NET MAUI bindings for the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion). The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
     <PackageLicenseExpression>MIT AND $(FFmpegKitNativeLicense)</PackageLicenseExpression>
-    <PackageTags>ffmpeg;ffmpegkit;$(FFmpegKitAarName);video;audio;SDK;Xamarin;Android;Xamarin.Android;MAUI;Binding</PackageTags>
+    <PackageTags>ffmpeg;ffmpegkit;$(FFmpegKitAarName);video;audio;transcode;SDK;MAUI;Android;dotnet-android;Binding</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludeSymbols>true</IncludeSymbols>

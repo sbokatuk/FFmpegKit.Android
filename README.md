@@ -2,7 +2,7 @@
 
 > ⚠️ **This project is under active development.** APIs, repository structure, and NuGet packages may change without notice. Use in production at your own risk.
 
-Xamarin/.NET for Android bindings for the native **FFmpegKit** library.
+.NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
 Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next)**
 
@@ -16,7 +16,7 @@ Each .NET SDK's Android workload supports only two target frameworks — the .NE
 
 ### Where the native binaries come from
 
-The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` release assets have been deleted; its successor `ffmpeg-kit-next` is source-only. The `.aar` files are therefore pulled from the community-maintained Maven Central mirror `dev.ffmpegkit-maintained` — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), and `FetchJars.sh` must be kept in sync with it.
+The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` release assets have been deleted; its successor `ffmpeg-kit-next` is source-only. The `.aar` files are therefore pulled from the community-maintained Maven Central mirror `dev.ffmpegkit-maintained` — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
 `FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
@@ -28,14 +28,14 @@ The C# binding code in this repository is [MIT](LICENSE). **The published NuGet 
 
 | Package | Native license | SPDX expression |
 | --- | --- | --- |
-| `Xamarin.FFmpegKit.Audio.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
-| `Xamarin.FFmpegKit.Full.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
-| `Xamarin.FFmpegKit.Https.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
-| `Xamarin.FFmpegKit.Min.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
-| `Xamarin.FFmpegKit.Video.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
-| `Xamarin.FFmpegKit.FullGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
-| `Xamarin.FFmpegKit.HttpsGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
-| `Xamarin.FFmpegKit.MinGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `FFmpegKit.Net.Audio.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `FFmpegKit.Net.Full.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `FFmpegKit.Net.Https.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `FFmpegKit.Net.Min.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `FFmpegKit.Net.Video.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `FFmpegKit.Net.FullGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `FFmpegKit.Net.HttpsGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `FFmpegKit.Net.MinGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
 
 The `-gpl` variants enable `x264`, `x265`, `xvid` and `vidstab`, which are GPL — upstream keeps them as separate artifacts specifically so they never contaminate the LGPL ones. Upstream's guidance is direct: **if your app is closed-source, use a non-GPL variant.**
 
@@ -49,15 +49,30 @@ Install the package via NuGet. There are various packages depending on what you 
 
 | Package | Link|
 |------------|-----|
-| Xamarin.FFmpegKit.Audio.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Audio.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Audio.Android) |
-| Xamarin.FFmpegKit.Full.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Full.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Full.Android) |
-| Xamarin.FFmpegKit.FullGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.FullGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.FullGpl.Android) |
-| Xamarin.FFmpegKit.Https.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Https.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Https.Android) |
-| Xamarin.FFmpegKit.HttpsGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.HttpsGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.HttpsGpl.Android) |
-| Xamarin.FFmpegKit.Min.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Min.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Min.Android) |
-| Xamarin.FFmpegKit.MinGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.MinGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.MinGpl.Android) |
-| Xamarin.FFmpegKit.Video.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Video.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Video.Android) |
+| FFmpegKit.Net.Audio.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Audio.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Audio.Android) |
+| FFmpegKit.Net.Full.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Full.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Full.Android) |
+| FFmpegKit.Net.FullGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.FullGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.FullGpl.Android) |
+| FFmpegKit.Net.Https.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Https.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Https.Android) |
+| FFmpegKit.Net.HttpsGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.HttpsGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.HttpsGpl.Android) |
+| FFmpegKit.Net.Min.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Min.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Min.Android) |
+| FFmpegKit.Net.MinGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.MinGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.MinGpl.Android) |
+| FFmpegKit.Net.Video.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Video.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android) |
 
+
+### Migrating from `Xamarin.FFmpegKit.*`
+
+These packages replace the `Xamarin.FFmpegKit.*.Android` ones, which are no longer published. Change the package id and nothing else:
+
+```diff
+-<PackageReference Include="Xamarin.FFmpegKit.Video.Android" Version="4.5.1" />
++<PackageReference Include="FFmpegKit.Net.Video.Android" Version="8.1.7" />
+```
+
+**The `Ffmpegkit.Droid` namespace is unchanged**, so your `using` directives and calls stay as they are. It deliberately does not follow the package name: a namespace rooted at `FFmpegKit` containing a type also called `FFmpegKit` makes `FFmpegKit.Execute(...)` resolve the namespace instead of the class and fail to compile.
+
+The assembly is now `FFmpegKit.Net.<Variant>.Android` (was `FFmpegKit.<Variant>.Android`), which matters only if you reference it by assembly name or use reflection.
+
+Note that the native library also moved on from the archived `arthenica` builds — see [Where the native binaries come from](#where-the-native-binaries-come-from) — so upgrading from `4.5.1` is a jump from FFmpegKit 4.5 to 8.1.7, not just a repackaging.
 
 ## Usage
 
@@ -139,7 +154,7 @@ Arguments are the variant, the package version in `./artifacts`, and which of th
 dotnet build FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
 ```
 
-It resolves `Xamarin.FFmpegKit.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
+It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
 
 It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
 

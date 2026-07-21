@@ -37,7 +37,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Xamarin.FFmpegKit.$(FFmpegKitVariant).Android" Version="$(FFmpegKitPackageVersion)" />
+    <PackageReference Include="FFmpegKit.Net.$(FFmpegKitVariant).Android" Version="$(FFmpegKitPackageVersion)" />
   </ItemGroup>
 
 </Project>

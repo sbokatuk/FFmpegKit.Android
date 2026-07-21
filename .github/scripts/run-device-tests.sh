@@ -41,7 +41,7 @@ printf '{ "sdk": { "version": "%s", "rollForward": "latestFeature" } }\n' "${sdk
 # NuGet caches by package id + version, so rebuilding a version that was already restored once
 # silently reuses the stale copy. CI versions are unique, but locally you will re-pack the same
 # version repeatedly and test yesterday's bits without this.
-package_id="xamarin.ffmpegkit.$(printf '%s' "${VARIANT}" | tr '[:upper:]' '[:lower:]').android"
+package_id="ffmpegkit.net.$(printf '%s' "${VARIANT}" | tr '[:upper:]' '[:lower:]').android"
 rm -rf "${HOME}/.nuget/packages/${package_id}/${VERSION}"
 
 echo "==> installing device tests (variant=${VARIANT}, version=${VERSION}, tfm=${TARGET_FRAMEWORK}, sdk=${sdk_version})"
