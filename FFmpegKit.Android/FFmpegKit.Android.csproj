@@ -45,6 +45,24 @@
   </PropertyGroup>
 
   <!--
+    Licensing follows the native binaries, not this repository. Upstream ships the -gpl variants
+    under GPL-3.0 (x264/x265/xvid/vidstab are GPL) and everything else under LGPL-3.0; each .aar
+    carries the matching licence text at res/raw/license.txt. Upstream states version 3.0 with no
+    "or later" wording, hence the -only SPDX identifiers. The binding source itself is MIT, so the
+    package as a whole is the conjunction of the two.
+  -->
+  <PropertyGroup>
+    <FFmpegKitIsGpl>false</FFmpegKitIsGpl>
+    <FFmpegKitIsGpl Condition="$(FFmpegKitBuildType.EndsWith('Gpl'))">true</FFmpegKitIsGpl>
+
+    <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' == 'true' ">GPL-3.0-only</FFmpegKitNativeLicense>
+    <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' != 'true' ">LGPL-3.0-only</FFmpegKitNativeLicense>
+
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' == 'true' ">../licenses/GPL-3.0.txt</FFmpegKitNativeLicenseFile>
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' != 'true' ">../licenses/LGPL-3.0.txt</FFmpegKitNativeLicenseFile>
+  </PropertyGroup>
+
+  <!--
     Jars/ holds every variant once FetchJars.sh has run, so clear any default globbing and
     bind only the one .aar this build is for.
   -->
@@ -74,7 +92,8 @@
     <IsPackable>true</IsPackable>
     <PackageId>Xamarin.FFmpegKit.$(FFmpegKitBuildType).Android</PackageId>
     <Title>Xamarin bindings to the native Android FFmpegKit $(FFmpegKitBuildType) SDK.</Title>
-    <Description>Xamarin bindings to the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion) for .NET for Android.</Description>
+    <Description>Xamarin bindings to the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion) for .NET for Android. The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
+    <PackageLicenseExpression>MIT AND $(FFmpegKitNativeLicense)</PackageLicenseExpression>
     <PackageTags>ffmpeg;ffmpegkit;$(FFmpegKitAarName);video;audio;SDK;Xamarin;Android;Xamarin.Android;MAUI;Binding</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -85,6 +104,15 @@
   <ItemGroup>
     <None Include="../Nugets/icon.png" Pack="true" PackagePath="/" Visible="false" />
     <None Include="../README.md" Pack="true" PackagePath="/" Visible="false" />
+
+    <!--
+      Ship both licence texts the package is covered by. Distributing LGPL/GPL binaries means
+      conveying their terms, and a consumer should not have to unzip the .aar to find them.
+      Packed into a folder so each file keeps its own name - naming the target explicitly would
+      make NuGet treat the extensionless LICENSE as a directory.
+    -->
+    <None Include="../LICENSE" Pack="true" PackagePath="licenses/" Visible="false" />
+    <None Include="$(FFmpegKitNativeLicenseFile)" Pack="true" PackagePath="licenses/" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

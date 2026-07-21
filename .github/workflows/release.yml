@@ -121,16 +121,27 @@ jobs:
             echo
             echo "Bound against FFmpegKit \`${native}\`, targeting \`net8.0-android34.0\`, \`net9.0-android35.0\` and \`net10.0-android36.0\`."
             echo
-            echo "| Package | NuGet |"
-            echo "| --- | --- |"
+            echo "| Package | License | NuGet |"
+            echo "| --- | --- | --- |"
             for variant in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
               id="Xamarin.FFmpegKit.${variant}.Android"
-              echo "| \`${id}\` | [${VERSION}](https://www.nuget.org/packages/${id}/${VERSION}) |"
+              case "${variant}" in
+                *Gpl) license="MIT AND GPL-3.0-only" ;;
+                *)    license="MIT AND LGPL-3.0-only" ;;
+              esac
+              echo "| \`${id}\` | \`${license}\` | [${VERSION}](https://www.nuget.org/packages/${id}/${VERSION}) |"
             done
             echo
             echo "\`\`\`"
             echo "dotnet add package Xamarin.FFmpegKit.Video.Android --version ${VERSION}"
             echo "\`\`\`"
+            echo
+            echo "## Licensing"
+            echo
+            echo "The binding code is MIT, but the bundled native FFmpeg binaries are not."
+            echo "The \`-gpl\` variants enable x264/x265/xvid/vidstab and are **GPL-3.0**; the rest"
+            echo "are LGPL-3.0. If your app is closed-source, use a non-GPL variant."
+            echo "Each package ships the applicable texts under \`licenses/\`."
           } > release-notes.md
 
           cat release-notes.md >> "$GITHUB_STEP_SUMMARY"

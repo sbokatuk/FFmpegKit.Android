@@ -100,7 +100,7 @@ public class PackageLayoutTests
 
         Assert.Equal(Packages.PackageId(variant), Value("id"));
         Assert.NotEmpty(Value("version"));
-        Assert.Equal("MIT", Value("license"));
+        Assert.Equal(Packages.LicenseExpression(variant), Value("license"));
         Assert.Equal("icon.png", Value("icon"));
         Assert.Equal("README.md", Value("readme"));
         Assert.Contains("FFmpegKit", Value("description"), StringComparison.Ordinal);
@@ -121,6 +121,29 @@ public class PackageLayoutTests
 
         Assert.True(package.GetEntry("icon.png") is not null, "icon.png is referenced but not packed.");
         Assert.True(package.GetEntry("README.md") is not null, "README.md is referenced but not packed.");
+    }
+
+    [Theory]
+    [MemberData(nameof(Packages.Variants), MemberType = typeof(Packages))]
+    public void Package_ships_both_licence_texts_it_is_covered_by(string variant)
+    {
+        using var package = Packages.OpenPackage(variant);
+
+        var bindings = new StreamReader(Packages.ReadEntry(package, "licenses/LICENSE")).ReadToEnd();
+        Assert.Contains("MIT License", bindings, StringComparison.OrdinalIgnoreCase);
+
+        // The GPL and LGPL texts differ only subtly at a glance - the LGPL is titled "GNU LESSER
+        // GENERAL PUBLIC LICENSE" - so assert both the file name and the title, to catch the two
+        // being swapped as well as a variant being mapped to the wrong licence.
+        var expectedFile = $"licenses/{Packages.NativeLicense(variant).Replace("-only", string.Empty)}.txt";
+        var expectedTitle = Packages.IsGpl(variant)
+            ? "GNU GENERAL PUBLIC LICENSE"
+            : "GNU LESSER GENERAL PUBLIC LICENSE";
+
+        var native = new StreamReader(Packages.ReadEntry(package, expectedFile)).ReadToEnd();
+
+        Assert.StartsWith(expectedTitle, native.TrimStart(), StringComparison.Ordinal);
+        Assert.Contains("Version 3", native, StringComparison.Ordinal);
     }
 
     [Theory]

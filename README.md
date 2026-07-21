@@ -22,12 +22,30 @@ The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` re
 
 ## License
 
-The bindings are distributed under the [MIT](LICENSE) license. The license of the native FFmpegKit/FFmpeg library itself is defined by the original project — see [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next).
-Xamarin.Android bindings of [FFmpegKit](https://github.com/arthenica/ffmpeg-kit)
+> This section describes what the upstream project states. It is not legal advice — if the distinction matters for your product, get it reviewed.
+
+The C# binding code in this repository is [MIT](LICENSE). **The published NuGet packages are not**, because each one embeds native FFmpeg binaries built by [ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg), which carry their own copyleft terms. Each package therefore declares `MIT AND <native license>`:
+
+| Package | Native license | SPDX expression |
+| --- | --- | --- |
+| `Xamarin.FFmpegKit.Audio.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Full.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Https.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Min.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Video.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.FullGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `Xamarin.FFmpegKit.HttpsGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `Xamarin.FFmpegKit.MinGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+
+The `-gpl` variants enable `x264`, `x265`, `xvid` and `vidstab`, which are GPL — upstream keeps them as separate artifacts specifically so they never contaminate the LGPL ones. Upstream's guidance is direct: **if your app is closed-source, use a non-GPL variant.**
+
+Upstream states version 3.0 with no "or later" wording, hence the `-only` SPDX identifiers.
+
+Every package ships the texts it is covered by under `licenses/` — `LICENSE` (MIT, the bindings) and `LGPL-3.0.txt` or `GPL-3.0.txt` (the native binaries). The same texts are in this repository under [`licenses/`](licenses). Per-dependency notices for the individual codecs (`x264`, `dav1d`, `freetype`, …) travel inside each `.aar` at `res/raw/license_*.txt` and end up in your app's resources.
 
 
 ## Installation
-Install the package via NuGet. There are various packages depending on what you plan to use and if you require a GPL compatible package or not. These package variants match the different variants built in the FFmpegKit repository.
+Install the package via NuGet. There are various packages depending on what you plan to use and if you require a GPL compatible package or not. These package variants match the different variants built in the FFmpegKit repository. The `-gpl` variants are GPL-3.0 — see [License](#license) before choosing one.
 
 | Package | Link|
 |------------|-----|
@@ -133,7 +151,7 @@ Setup on nuget.org (**Account → Trusted Publishing**): a policy binds to exact
 | Workflow File | `pr.yml` for one policy, `release.yml` for the other |
 | Environment | `production` — must match `environment:` on the publish job |
 
-The only repository secret needed is `NUGET_USER`: your nuget.org **profile name** (`s.bokatuk`), not your email address.
+No repository secrets are required. The workflows pass the nuget.org **profile name** (`s.bokatuk`, not an email address) to `NuGet/login`, defaulted inline since it is already public as the package author. Set a `NUGET_USER` secret to override it if the owner ever changes.
 
 Policies created against a private repository start out active for 7 days only; they become permanent after the first successful publish, which supplies the repository and owner IDs that lock the policy down.
 

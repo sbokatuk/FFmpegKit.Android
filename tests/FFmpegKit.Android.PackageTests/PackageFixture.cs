@@ -34,6 +34,16 @@ public static class Packages
 
     public static string PackageId(string variant) => $"Xamarin.FFmpegKit.{variant}.Android";
 
+    /// <summary>
+    /// Upstream ships the -gpl variants under GPL-3.0 and the rest under LGPL-3.0. Getting this
+    /// wrong would misrepresent the obligations a consumer takes on, so it is asserted per variant.
+    /// </summary>
+    public static bool IsGpl(string variant) => variant.EndsWith("Gpl", StringComparison.Ordinal);
+
+    public static string NativeLicense(string variant) => IsGpl(variant) ? "GPL-3.0-only" : "LGPL-3.0-only";
+
+    public static string LicenseExpression(string variant) => $"MIT AND {NativeLicense(variant)}";
+
     public static string AssemblyName(string variant) => $"FFmpegKit.{variant}.Android";
 
     /// <summary>FullGpl -> full-gpl, HttpsGpl -> https-gpl, Video -> video, ...</summary>

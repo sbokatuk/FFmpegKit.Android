@@ -14,7 +14,12 @@
     <PackageProjectUrl>https://github.com/sbokatuk/FFmpegKit.Android</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sbokatuk/FFmpegKit.Android</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!--
+      No PackageLicenseExpression here: it is not one value for the whole repository. The C#
+      binding source is MIT, but each package also ships native FFmpegKit binaries that are
+      LGPL-3.0 or GPL-3.0 depending on the variant, so the expression is built per variant in
+      FFmpegKit.Android.csproj.
+    -->
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
