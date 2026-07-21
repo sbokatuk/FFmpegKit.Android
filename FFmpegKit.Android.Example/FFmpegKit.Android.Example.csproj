@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android35.0</TargetFramework>
+
+    <OutputType>Exe</OutputType>
+    <RootNamespace>FFmpegKit.Android.Example</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <CheckEolWorkloads>false</CheckEolWorkloads>
+
+    <ApplicationTitle>FFmpegKit.Android.Example</ApplicationTitle>
+    <ApplicationId>com.sbokatuk.ffmpegkit.example</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- FFmpegKit's native .aar requires minSdkVersion 24. -->
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+
+    <!--
+      Which build of the FFmpegKit package to demo. Defaults to FFmpegKitNativeVersion from
+      Directory.Build.props, so it tracks the repository automatically; pass
+      -p:FFmpegKitVersion=8.1.7-beta.4 to try a specific build.
+    -->
+    <FFmpegKitVersion Condition=" '$(FFmpegKitVersion)' == '' ">$(FFmpegKitNativeVersion)</FFmpegKitVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+    <MauiImage Include="Resources\Images\*" />
+    <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
+    <MauiFont Include="Resources\Fonts\*" />
+    <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Maui" Version="11.0.0" />
+    <PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+
+    <!--
+      The locally built package, resolved from ./artifacts via the local-artifacts source in the
+      repository's NuGet.config. Run FFmpegKit.Android/BuildNugets.sh first - this deliberately
+      does not come from nuget.org, so the example exercises what you just built.
+      Full is the LGPL variant; the -gpl ones would make this sample GPL-3.0.
+    -->
+    <PackageReference Include="Xamarin.FFmpegKit.Full.Android" Version="$(FFmpegKitVersion)" />
+  </ItemGroup>
+
+</Project>

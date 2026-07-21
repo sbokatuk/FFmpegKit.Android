@@ -1,156 +1,123 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{0A5DA42A-6C62-423C-806F-22C070C8FDDF}</ProjectGuid>
-    <ProjectTypeGuids>{10368E6C-D01B-4462-8E8B-01FC667A7035};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <TemplateGuid>{77efb91c-a7e9-4b0e-a7c5-31eeec3c6d46}</TemplateGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <!--
+      Each .NET SDK's Android workload supports exactly two TFMs: the .NET 9 band ships
+      Microsoft.Android.Sdk.net8 + .net9, the .NET 10 band ships .net9 + .net10. No single SDK can
+      build all three, so BuildNugets.sh packs twice and merges the results - see
+      build/merge-packages.py. FFmpegKitTargetFrameworks selects which pass this build is.
+
+      The API level is pinned per TFM on purpose: bare 'net8.0-android' resolves to android21.0,
+      which silently produces an empty binding assembly with no .aar payload.
+    -->
+    <FFmpegKitSdkBand Condition=" '$(FFmpegKitSdkBand)' == '' ">net9</FFmpegKitSdkBand>
+    <TargetFrameworks Condition=" '$(FFmpegKitSdkBand)' == 'net9' ">net8.0-android34.0;net9.0-android35.0</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(FFmpegKitSdkBand)' == 'net10' ">net10.0-android36.0</TargetFrameworks>
+    <!--
+      net8.0-android and net9.0-android are past end of support, which the SDK reports as an
+      error/warning. They ship deliberately: .NET 8 is still where a large share of MAUI apps are.
+    -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <CheckEolWorkloads>false</CheckEolWorkloads>
     <RootNamespace>Ffmpegkit.Droid</RootNamespace>
-    <AssemblyName>FFmpegKit.Android</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>True</Deterministic>
-    <TargetFrameworkVersion>v11.0</TargetFrameworkVersion>
+    <AssemblyName>FFmpegKit.$(FFmpegKitBuildType).Android</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AndroidClassParser>class-parse</AndroidClassParser>
     <AndroidCodegenTarget>XAJavaInterop1</AndroidCodegenTarget>
-    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
-    <AndroidApplication>True</AndroidApplication>
-    <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
- <ItemGroup>
-    <Reference Include="Mono.Android" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Jars\AboutJars.txt" />
-    <None Include="Additions\AboutAdditions.txt" />
-    <None Include="Properties\AndroidManifest.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <TransformFile Include="Transforms\Metadata.xml" />
-    <TransformFile Include="Transforms\EnumFields.xml" />
-    <TransformFile Include="Transforms\EnumMethods.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedJar Include="Jars\smart-exception-common-0.2.1.jar" />
-    <EmbeddedJar Include="Jars\smart-exception-java-0.2.1.jar" />
-  </ItemGroup>
-
-  <!-- Set the default FFmpegKitBuildType -->
-  <PropertyGroup>
-    <FFmpegKitBuildType Condition="'$(FFmpegKitBuildType)'==''">Video</FFmpegKitBuildType>
+    <!-- CS1591: the generated binding has no XML doc comments. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
-  <!-- For each FFmpegKitBuildType set output path-->
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Audio'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Audio.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.Audio.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Full'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Full.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.Full.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'FullGpl'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.FullGpl.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.FullGpl.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Https'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Https.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.Https.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'HttpsGpl'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.HttpsGpl.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.HttpsGpl.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Min'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Min.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.Min.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'MinGpl'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.MinGpl.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.MinGpl.Android</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FFmpegKitBuildType)' == 'Video'">
-    <OutputPath>..\Nugets\Xamarin.FFmpegKit.Video.Android\lib\MonoAndroid10\</OutputPath>
-    <AssemblyName>FFmpegKit.Video.Android</AssemblyName>
-  </PropertyGroup>
-  
-
-  <!-- For each FFmpegKitBuildType set correct LibraryProjectZip -->
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Audio'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Full'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'FullGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Https'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'HttpsGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Min'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'MinGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-5.1.LTS.aar" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Video'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-5.1.LTS.aar" />
-  </ItemGroup>
-
-
-  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.Bindings.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Target Name="ValidateFFmpegKitSdkBand" BeforeTargets="Build;Pack"
+          Condition=" '$(TargetFrameworks)' == '' ">
+    <Error Text="FFmpegKitSdkBand must be 'net9' or 'net10', but was '$(FFmpegKitSdkBand)'." />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
+
+  <!--
+    Map the build type onto the published .aar artifact name:
+    FullGpl -> full-gpl, HttpsGpl -> https-gpl, MinGpl -> min-gpl, Video -> video, ...
   -->
+  <PropertyGroup>
+    <FFmpegKitAarName>$(FFmpegKitBuildType.ToLowerInvariant().Replace('gpl', '-gpl'))</FFmpegKitAarName>
+    <FFmpegKitAar>Jars/ffmpeg-kit-$(FFmpegKitAarName)-$(FFmpegKitNativeVersion).aar</FFmpegKitAar>
+  </PropertyGroup>
+
+  <!--
+    Licensing follows the native binaries, not this repository. Upstream ships the -gpl variants
+    under GPL-3.0 (x264/x265/xvid/vidstab are GPL) and everything else under LGPL-3.0; each .aar
+    carries the matching licence text at res/raw/license.txt. Upstream states version 3.0 with no
+    "or later" wording, hence the -only SPDX identifiers. The binding source itself is MIT, so the
+    package as a whole is the conjunction of the two.
+  -->
+  <PropertyGroup>
+    <FFmpegKitIsGpl>false</FFmpegKitIsGpl>
+    <FFmpegKitIsGpl Condition="$(FFmpegKitBuildType.EndsWith('Gpl'))">true</FFmpegKitIsGpl>
+
+    <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' == 'true' ">GPL-3.0-only</FFmpegKitNativeLicense>
+    <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' != 'true' ">LGPL-3.0-only</FFmpegKitNativeLicense>
+
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' == 'true' ">../licenses/GPL-3.0.txt</FFmpegKitNativeLicenseFile>
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' != 'true' ">../licenses/LGPL-3.0.txt</FFmpegKitNativeLicenseFile>
+  </PropertyGroup>
+
+  <!--
+    Jars/ holds every variant once FetchJars.sh has run, so clear any default globbing and
+    bind only the one .aar this build is for.
+  -->
+  <ItemGroup>
+    <AndroidLibrary Remove="Jars/**/*.aar" />
+    <AndroidLibrary Remove="Jars/**/*.jar" />
+    <AndroidLibrary Include="$(FFmpegKitAar)" Bind="true" />
+
+    <!--
+      FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions.
+      That dependency is neither bundled in the .aar nor declared in its .pom, so it has to be
+      embedded here or every FFmpeg call throws NoClassDefFoundError on device. Bind="false":
+      consumers only need the classes at runtime, not a C# binding for them.
+    -->
+    <AndroidLibrary Include="Jars/smart-exception-common-0.2.1.jar" Bind="false" />
+    <AndroidLibrary Include="Jars/smart-exception-java-0.2.1.jar" Bind="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TransformFile Include="Transforms/Metadata.xml" />
+    <TransformFile Include="Transforms/EnumFields.xml" />
+    <TransformFile Include="Transforms/EnumMethods.xml" />
+  </ItemGroup>
+
+  <!-- Packaging -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Xamarin.FFmpegKit.$(FFmpegKitBuildType).Android</PackageId>
+    <Title>Xamarin bindings to the native Android FFmpegKit $(FFmpegKitBuildType) SDK.</Title>
+    <Description>Xamarin bindings to the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion) for .NET for Android. The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
+    <PackageLicenseExpression>MIT AND $(FFmpegKitNativeLicense)</PackageLicenseExpression>
+    <PackageTags>ffmpeg;ffmpegkit;$(FFmpegKitAarName);video;audio;SDK;Xamarin;Android;Xamarin.Android;MAUI;Binding</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../Nugets/icon.png" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="../README.md" Pack="true" PackagePath="/" Visible="false" />
+
+    <!--
+      Ship both licence texts the package is covered by. Distributing LGPL/GPL binaries means
+      conveying their terms, and a consumer should not have to unzip the .aar to find them.
+      Packed into a folder so each file keeps its own name - naming the target explicitly would
+      make NuGet treat the extensionless LICENSE as a directory.
+    -->
+    <None Include="../LICENSE" Pack="true" PackagePath="licenses/" Visible="false" />
+    <None Include="$(FFmpegKitNativeLicenseFile)" Pack="true" PackagePath="licenses/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Jars/AboutJars.txt" />
+    <None Include="Additions/AboutAdditions.txt" />
+  </ItemGroup>
+
 </Project>

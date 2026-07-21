@@ -8,26 +8,44 @@ Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffm
 
 ## About
 
-This repository contains .NET bindings (`.csproj` with `AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android, along with scaffolding for the following NuGet packages:
+This repository contains .NET bindings (`AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android. One project, `FFmpegKit.Android`, produces all eight package variants — the variant is selected with the `FFmpegKitBuildType` MSBuild property.
 
-- `Xamarin.FFmpegKit.Video.Android`
-- `Xamarin.FFmpegKit.FullGpl.Android`
+Packages target `net8.0-android34.0`, `net9.0-android35.0` and `net10.0-android36.0`.
 
-## Build
+Each .NET SDK's Android workload supports only two target frameworks — the .NET 9 band ships `Microsoft.Android.Sdk.net8` and `.net9`, the .NET 10 band ships `.net9` and `.net10` — so no single `dotnet pack` can produce all three. [`BuildNugets.sh`](FFmpegKit.Android/BuildNugets.sh) packs once per band and [`build/merge-packages.py`](build/merge-packages.py) merges the `lib/` trees and nuspec dependency groups into one package per variant.
 
-1. Download the desired `.aar` release from [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next/releases).
-2. Place the file into `FFmpegKit.Android/Jars`.
-3. Make sure the `.aar` filename referenced in `<LibraryProjectZip>` inside `FFmpegKit.Android.csproj` matches the downloaded file.
-4. Open `FFmpegKit.sln` and build the project.
+### Where the native binaries come from
+
+The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` release assets have been deleted; its successor `ffmpeg-kit-next` is source-only. The `.aar` files are therefore pulled from the community-maintained Maven Central mirror `dev.ffmpegkit-maintained` — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), and `FetchJars.sh` must be kept in sync with it.
+
+`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
 ## License
 
-The bindings are distributed under the [MIT](LICENSE) license. The license of the native FFmpegKit/FFmpeg library itself is defined by the original project — see [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next).
-Xamarin.Android bindings of [FFmpegKit](https://github.com/arthenica/ffmpeg-kit)
+> This section describes what the upstream project states. It is not legal advice — if the distinction matters for your product, get it reviewed.
+
+The C# binding code in this repository is [MIT](LICENSE). **The published NuGet packages are not**, because each one embeds native FFmpeg binaries built by [ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg), which carry their own copyleft terms. Each package therefore declares `MIT AND <native license>`:
+
+| Package | Native license | SPDX expression |
+| --- | --- | --- |
+| `Xamarin.FFmpegKit.Audio.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Full.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Https.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Min.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.Video.Android` | LGPL-3.0 | `MIT AND LGPL-3.0-only` |
+| `Xamarin.FFmpegKit.FullGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `Xamarin.FFmpegKit.HttpsGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+| `Xamarin.FFmpegKit.MinGpl.Android` | **GPL-3.0** | `MIT AND GPL-3.0-only` |
+
+The `-gpl` variants enable `x264`, `x265`, `xvid` and `vidstab`, which are GPL — upstream keeps them as separate artifacts specifically so they never contaminate the LGPL ones. Upstream's guidance is direct: **if your app is closed-source, use a non-GPL variant.**
+
+Upstream states version 3.0 with no "or later" wording, hence the `-only` SPDX identifiers.
+
+Every package ships the texts it is covered by under `licenses/` — `LICENSE` (MIT, the bindings) and `LGPL-3.0.txt` or `GPL-3.0.txt` (the native binaries). The same texts are in this repository under [`licenses/`](licenses). Per-dependency notices for the individual codecs (`x264`, `dav1d`, `freetype`, …) travel inside each `.aar` at `res/raw/license_*.txt` and end up in your app's resources.
 
 
 ## Installation
-Install the package via NuGet. There are various packages depending on what you plan to use and if you require a GPL compatible package or not. These package variants match the different variants built in the FFmpegKit repository.
+Install the package via NuGet. There are various packages depending on what you plan to use and if you require a GPL compatible package or not. These package variants match the different variants built in the FFmpegKit repository. The `-gpl` variants are GPL-3.0 — see [License](#license) before choosing one.
 
 | Package | Link|
 |------------|-----|
@@ -57,35 +75,101 @@ FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 More examples and usage can be found in the [FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android).
 
 
-## Building with build scripts (macOS tested)
-1. Navigate to the Jars directory in terminal
-2. Run FetchJars.sh 
-    ``` sh
-    $ ./FetchJars.sh
-    ```
-3. Go back up one directory
-4. Run BuildNugets.sh
-    ``` sh
-    $ ./BuildNugets.sh
-    ```
-5. This will now create nupkg packages of all 8 variants of FFmpegKit.Android.
+## Building
 
-Tip: If you only want to build one variant of FFmpegKit.Android and its nuget packages, comment out other lines in `FetchJars.sh` and `BuildNugets.sh`.
+### Prerequisites
 
-## Building manually
-1. Download `smart-exception-common-0.2.1.jar` and `smart-exception-java-0.2.1.jar` from the [smart-exception](https://github.com/tanersener/smart-exception/) repository.
-2. Place in `Jars` folder.
-3. Download `ffmpeg-kit-audio-5.1.LTS.aar`, `ffmpeg-kit-full-5.1.LTS.aar`, `ffmpeg-kit-full-gpl-5.1.LTS.aar`, `ffmpeg-kit-https-5.1.LTS.aar`, `ffmpeg-kit-https-gpl-5.1.LTS.aar`, `ffmpeg-kit-min-5.1.LTS.aar`, `ffmpeg-kit-min-gpl-5.1.LTS.aar` and `ffmpeg-kit-video-5.1.LTS.aar` from the [FFmpegKit](https://github.com/arthenica/ffmpeg-kit/) repository from the releases tab, under LTS build. 
-NOTE: If you only intend to build one binding then you only need to download that one aar file.
-4. Place in `Jars` folder.
-5. In the directory relative to the csproj file run the build command
-```
-msbuild FFmpegKit.Android.csproj /p:Configuration=Release  /p:FFmpegKitBuildType={TYPE} -target:Clean,Build
-```
-where `{TYPE}` is the FFmpegKit variant you are building. Possible options are `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl` or `Video`.
+The .NET 8, 9 and 10 SDKs, each with the Android workload installed — every band supplies a different reference pack (`Ref.34`, `Ref.35`, `Ref.36`). The SDK is chosen by the `global.json` in the *working directory*, so install each band from a directory pinned to it:
 
-6. To build the nuget package run the pack command
+```sh
+for major in 8 9 10; do
+  dir=$(mktemp -d) && cd "$dir"
+  dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep "^${major}\." | tail -1 | cut -d' ' -f1)" --force
+  dotnet workload install android
+done
 ```
-nuget pack ../Nugets/Xamarin.FFmpegKit.{TYPE}.Android/Xamarin.FFmpegKit.{TYPE}.Android.nuspec -Symbols -SymbolPackageFormat snupkg
+
+Python 3 is also needed, for the package merge step.
+
+### All variants
+
+```sh
+./FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
+./FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
+./FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit package version
 ```
-where type is the same as from the previous step.
+
+`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
+
+### A single variant
+
+```sh
+# net8 + net9 assets (.NET 9 SDK, per global.json)
+dotnet pack FFmpegKit.Android/FFmpegKit.Android.csproj \
+    -c Release -p:FFmpegKitBuildType=Video -p:FFmpegKitSdkBand=net9 -o artifacts
+```
+
+`FFmpegKitBuildType` is one of `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl`, `Video`. `FFmpegKitSdkBand` is `net9` or `net10` and must match the SDK actually running the build. Each variant builds into its own `obj/` and `bin/` subdirectory, so they can be built in sequence without interfering with each other.
+
+## Tests
+
+**Package tests** run anywhere and inspect the packed `.nupkg` files — assembly present for both target frameworks, correct `.aar` for the variant, bound API surface, embedded `smart-exception` classes, nuspec metadata:
+
+```sh
+dotnet test tests/FFmpegKit.Android.PackageTests
+FFMPEGKIT_VARIANTS=Video dotnet test tests/FFmpegKit.Android.PackageTests  # only what you packed
+```
+
+**Device tests** install the packed package into a small app and run real FFmpeg commands on a device or emulator (encode raw frames to mp4, probe the result, check failure reporting). They consume the package from `./artifacts` via the local feed in `NuGet.config`, so they exercise exactly what gets published:
+
+```sh
+# builds, installs, runs and reports - the same script CI uses
+FFMPEGKIT_DEVICE_RID=android-arm64 \
+    ./.github/scripts/run-device-tests.sh Video 8.1.7 net10.0-android36.0
+```
+
+Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
+
+## Example app
+
+[`FFmpegKit.Android.Example`](FFmpegKit.Android.Example) is a small .NET MAUI app that runs real conversions against the package you just built — resize, grayscale and audio extraction — with a before/after video preview.
+
+```sh
+./FFmpegKit.Android/BuildNugets.sh                    # produce ./artifacts first
+dotnet build FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
+```
+
+It resolves `Xamarin.FFmpegKit.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
+
+It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
+
+The app is intentionally **not** part of `FFmpegKit.sln` and not built in CI: it needs the MAUI workload, which would add several minutes to every run while proving less than the device tests already do.
+
+## CI
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke test, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
+| [`release.yml`](.github/workflows/release.yml) | tag `v*` | Same build and tests at the tag's version, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
+
+Both call the reusable [`build.yml`](.github/workflows/build.yml).
+
+### Publishing credentials
+
+Publishing uses [nuget.org Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) — no long-lived API key. Each publish job requests a GitHub OIDC token (`id-token: write`), exchanges it via `NuGet/login@v1` for an API key valid for one hour, and pushes with that.
+
+Setup on nuget.org (**Account → Trusted Publishing**): a policy binds to exactly **one** workflow file, so this repository needs **two**, identical apart from the workflow file name:
+
+| Field | Value |
+| --- | --- |
+| Package Owner | `s.bokatuk` |
+| Repository Owner | `sbokatuk` |
+| Repository | `FFmpegKit.Android` — the name only, not a URL |
+| Workflow File | `pr.yml` for one policy, `release.yml` for the other |
+| Environment | `production` — must match `environment:` on the publish job |
+
+No repository secrets are required. The workflows pass the nuget.org **profile name** (`s.bokatuk`, not an email address) to `NuGet/login`, defaulted inline since it is already public as the package author. Set a `NUGET_USER` secret to override it if the owner ever changes.
+
+Policies created against a private repository start out active for 7 days only; they become permanent after the first successful publish, which supplies the repository and owner IDs that lock the policy down.
+
+Note that prereleases pushed to nuget.org cannot be deleted, only unlisted — every pull request push publishes eight packages.

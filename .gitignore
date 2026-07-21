@@ -60,6 +60,7 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+!artifacts/.gitkeep
 
 # StyleCop
 StyleCopReport.xml
@@ -354,3 +355,8 @@ MigrationBackup/
 *.jar
 *.aar
 **/MonoAndroid10/*
+
+device-tests-logcat.txt
+
+# Device test output
+device-tests-logcat.txt

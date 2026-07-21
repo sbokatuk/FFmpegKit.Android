@@ -1,16 +1,58 @@
 #!/bin/sh
 
-rm -f *.jar
-rm -f *.aar
+set -e
 
-curl -L -O "https://github.com/tanersener/smart-exception/releases/download/v0.2.1/smart-exception-common-0.2.1.jar"
-curl -L -O "https://github.com/tanersener/smart-exception/releases/download/v0.2.1/smart-exception-java-0.2.1.jar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-audio-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-full-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-full-gpl-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-https-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-https-gpl-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-min-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-min-gpl-5.1.LTS.aar"
-curl -L -O "https://github.com/arthenica/ffmpeg-kit/releases/download/v5.1.LTS/ffmpeg-kit-video-5.1.LTS.aar"
+# Downloads the native FFmpegKit binaries the binding is built against.
+#
+# NOTE: the original arthenica/ffmpeg-kit repo is archived and its v5.1.LTS release
+# assets have been deleted from GitHub. Its successor, ffmpeg-kit-next, is source-only
+# (no prebuilt binaries since v6.1.0). The .aar files below instead come from the
+# community-maintained Maven Central mirror at dev.ffmpegkit-maintained.
+#
+# Usage:
+#   ./FetchJars.sh          # version from Directory.Build.props
+#   ./FetchJars.sh 8.2.0    # override, e.g. to try a newer upstream build before committing to it
 
+cd "$(dirname "$0")"
+
+ROOT="$(cd ../.. && pwd)"
+PROPS="$ROOT/Directory.Build.props"
+MAVEN_BASE="https://repo1.maven.org/maven2/dev/ffmpegkit-maintained"
+SMART_EXCEPTION_VERSION="0.2.1"
+
+# Read the version from Directory.Build.props rather than repeating it here: the .aar file names
+# are baked into the .csproj via FFmpegKitNativeVersion, so a second copy that drifts out of sync
+# fails the build with a confusing "file not found" on an .aar nobody downloaded.
+FFMPEG_KIT_VERSION="$1"
+if [ -z "$FFMPEG_KIT_VERSION" ]; then
+    FFMPEG_KIT_VERSION=$(sed -n 's:.*<FFmpegKitNativeVersion>\(.*\)</FFmpegKitNativeVersion>.*:\1:p' "$PROPS" | head -1)
+fi
+
+if [ -z "$FFMPEG_KIT_VERSION" ]; then
+    echo "error: could not read FFmpegKitNativeVersion from $PROPS" >&2
+    exit 1
+fi
+
+# The version is interpolated into URLs and file names, so reject anything exotic up front.
+case "$FFMPEG_KIT_VERSION" in
+    *[!A-Za-z0-9._-]*)
+        echo "error: invalid version '$FFMPEG_KIT_VERSION'" >&2
+        exit 1
+        ;;
+esac
+
+echo "==> fetching FFmpegKit $FFMPEG_KIT_VERSION"
+
+rm -f ./*.jar
+rm -f ./*.aar
+
+# FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions, which
+# is not bundled in the .aar and is not declared in its .pom. Without these two jars every
+# FFmpeg call fails at runtime with NoClassDefFoundError.
+for artifact in common java; do
+    curl -fL -O "https://github.com/tanersener/smart-exception/releases/download/v$SMART_EXCEPTION_VERSION/smart-exception-$artifact-$SMART_EXCEPTION_VERSION.jar"
+done
+
+for variant in audio full full-gpl https https-gpl min min-gpl video; do
+    curl -fL -O "$MAVEN_BASE/ffmpeg-kit-$variant/$FFMPEG_KIT_VERSION/ffmpeg-kit-$variant-$FFMPEG_KIT_VERSION.aar"
+done
