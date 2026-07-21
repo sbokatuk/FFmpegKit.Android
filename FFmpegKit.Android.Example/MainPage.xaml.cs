@@ -1,4 +1,8 @@
 using CommunityToolkit.Maui.Views;
+using Ffmpegkit.Droid;
+// This app's own root namespace is 'FFmpegKit', which would otherwise shadow the bound type.
+// An app whose namespace does not start with FFmpegKit can just write FFmpegKit.ExecuteAsync(...).
+using FFmpeg = Ffmpegkit.Droid.FFmpegKit;
 
 namespace FFmpegKit.Android.Example;
 
@@ -64,7 +68,7 @@ public partial class MainPage : ContentPage
 
 		try
 		{
-			var (success, message, outputPath) = await Task.Run(() => RunConversion(option, inputPath));
+			var (success, message, outputPath) = await RunConversionAsync(option, inputPath);
 			StatusLabel.Text = message;
 			SemanticScreenReader.Announce(message);
 
@@ -83,7 +87,7 @@ public partial class MainPage : ContentPage
 		}
 	}
 
-	static (bool Success, string Message, string OutputPath) RunConversion(ConversionOption option, string inputPath)
+	static async Task<(bool Success, string Message, string OutputPath)> RunConversionAsync(ConversionOption option, string inputPath)
 	{
 		var outputPath = Path.Combine(FileSystem.CacheDirectory, option.OutputFileName);
 
@@ -91,9 +95,12 @@ public partial class MainPage : ContentPage
 			File.Delete(outputPath);
 
 		var command = option.BuildCommand(inputPath, outputPath);
-		var session = Ffmpegkit.Droid.FFmpegKit.Execute(command);
 
-		if (Ffmpegkit.Droid.ReturnCode.IsSuccess(session.ReturnCode))
+		// Awaited directly: no Task.Run, because ExecuteAsync hands the work to FFmpegKit's own
+		// executor rather than blocking a thread pool thread for the length of the transcode.
+		var session = await FFmpeg.ExecuteAsync(command);
+
+		if (session.Succeeded())
 		{
 			var outputSize = new FileInfo(outputPath).Length;
 			return (true, $"Success! Converted video written to:\n{outputPath}\n({outputSize:N0} bytes)", outputPath);
