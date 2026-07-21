@@ -28,6 +28,13 @@ PASS2_SDK="10.0.100"
 
 VERSION_ARG=""
 if [ -n "$VERSION" ]; then
+    # Validated before being interpolated into MSBuild arguments and package file names.
+    case "$VERSION" in
+        *[!A-Za-z0-9.+_-]*)
+            echo "error: invalid version '$VERSION'" >&2
+            exit 1
+            ;;
+    esac
     VERSION_ARG="-p:Version=$VERSION"
 fi
 

@@ -96,8 +96,10 @@ Python 3 is also needed, for the package merge step.
 ```sh
 ./FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
 ./FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
-./FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit version
+./FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit package version
 ```
+
+`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
 
 ### A single variant
 
@@ -127,6 +129,21 @@ FFMPEGKIT_DEVICE_RID=android-arm64 \
 ```
 
 Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
+
+## Example app
+
+[`FFmpegKit.Android.Example`](FFmpegKit.Android.Example) is a small .NET MAUI app that runs real conversions against the package you just built — resize, grayscale and audio extraction — with a before/after video preview.
+
+```sh
+./FFmpegKit.Android/BuildNugets.sh                    # produce ./artifacts first
+dotnet build FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
+```
+
+It resolves `Xamarin.FFmpegKit.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
+
+It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
+
+The app is intentionally **not** part of `FFmpegKit.sln` and not built in CI: it needs the MAUI workload, which would add several minutes to every run while proving less than the device tests already do.
 
 ## CI
 
