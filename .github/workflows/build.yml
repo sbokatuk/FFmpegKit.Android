@@ -1,0 +1,147 @@
+name: build
+
+# Reusable pipeline: builds every FFmpegKit variant at a given version, validates the packed
+# packages, runs the on-device smoke tests, and uploads the packages as an artifact.
+# Callers (pr.yml, release.yml) decide the version and what to do with the result.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: NuGet version to stamp on every package.
+        required: true
+        type: string
+      e2e-variant:
+        description: Which variant the emulator smoke test installs and runs.
+        required: false
+        default: Video
+        type: string
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  pack:
+    name: build and pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # 9.0.x builds everything (global.json pins it). 8.0.x is installed only so that its
+          # Android workload band is available - see the workload step below.
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Install Android workloads for both SDK bands
+        run: |
+          # net8.0-android34.0 compiles against Microsoft.Android.Ref.34, which ships only in the
+          # .NET 8 workload band; the .NET 9 band carries Ref.35. global.json pins the .NET 9 SDK
+          # for the build, so install the .NET 8 band from a scratch directory where global.json
+          # does not apply, then install the .NET 9 band normally.
+          mkdir -p "${RUNNER_TEMP}/sdk8"
+          pushd "${RUNNER_TEMP}/sdk8"
+          dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep '^8\.' | tail -1 | cut -d' ' -f1)" --force
+          dotnet workload install android
+          popd
+          dotnet workload install android
+
+      - name: Set up Android SDK platforms
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 platforms;android-35'
+
+      - name: Cache FFmpegKit binaries
+        id: jars
+        uses: actions/cache@v4
+        with:
+          path: FFmpegKit.Android/Jars
+          key: ffmpegkit-jars-${{ hashFiles('FFmpegKit.Android/Jars/FetchJars.sh') }}
+
+      - name: Fetch FFmpegKit binaries
+        if: steps.jars.outputs.cache-hit != 'true'
+        run: ./FFmpegKit.Android/Jars/FetchJars.sh
+
+      - name: Pack all variants
+        run: ./FFmpegKit.Android/BuildNugets.sh "${{ inputs.version }}"
+
+      - name: Validate packages
+        run: dotnet test tests/FFmpegKit.Android.PackageTests --logger 'trx;LogFileName=package-tests.trx'
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore
+          retention-days: 7
+
+  e2e:
+    name: emulator smoke test
+    needs: pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install Android workload
+        run: dotnet workload install android
+
+      - name: Set up Android SDK platforms
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35'
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run smoke tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          # The .aar ships arm64-v8a and x86_64 only, so the emulator must be x86_64.
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./.github/scripts/run-device-tests.sh "${{ inputs.e2e-variant }}" "${{ inputs.version }}"
+
+      - name: Upload device logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-test-logs
+          path: device-tests-logcat.txt
+          if-no-files-found: ignore
+          retention-days: 7

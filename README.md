@@ -8,17 +8,15 @@ Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffm
 
 ## About
 
-This repository contains .NET bindings (`.csproj` with `AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android, along with scaffolding for the following NuGet packages:
+This repository contains .NET bindings (`AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android. One project, `FFmpegKit.Android`, produces all eight package variants — the variant is selected with the `FFmpegKitBuildType` MSBuild property.
 
-- `Xamarin.FFmpegKit.Video.Android`
-- `Xamarin.FFmpegKit.FullGpl.Android`
+Packages target `net8.0-android34.0` and `net9.0-android35.0`.
 
-## Build
+### Where the native binaries come from
 
-1. Download the desired `.aar` release from [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next/releases).
-2. Place the file into `FFmpegKit.Android/Jars`.
-3. Make sure the `.aar` filename referenced in `<LibraryProjectZip>` inside `FFmpegKit.Android.csproj` matches the downloaded file.
-4. Open `FFmpegKit.sln` and build the project.
+The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` release assets have been deleted; its successor `ffmpeg-kit-next` is source-only. The `.aar` files are therefore pulled from the community-maintained Maven Central mirror `dev.ffmpegkit-maintained` — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), and `FetchJars.sh` must be kept in sync with it.
+
+`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
 ## License
 
@@ -57,35 +55,63 @@ FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 More examples and usage can be found in the [FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android).
 
 
-## Building with build scripts (macOS tested)
-1. Navigate to the Jars directory in terminal
-2. Run FetchJars.sh 
-    ``` sh
-    $ ./FetchJars.sh
-    ```
-3. Go back up one directory
-4. Run BuildNugets.sh
-    ``` sh
-    $ ./BuildNugets.sh
-    ```
-5. This will now create nupkg packages of all 8 variants of FFmpegKit.Android.
+## Building
 
-Tip: If you only want to build one variant of FFmpegKit.Android and its nuget packages, comment out other lines in `FetchJars.sh` and `BuildNugets.sh`.
+### Prerequisites
 
-## Building manually
-1. Download `smart-exception-common-0.2.1.jar` and `smart-exception-java-0.2.1.jar` from the [smart-exception](https://github.com/tanersener/smart-exception/) repository.
-2. Place in `Jars` folder.
-3. Download `ffmpeg-kit-audio-5.1.LTS.aar`, `ffmpeg-kit-full-5.1.LTS.aar`, `ffmpeg-kit-full-gpl-5.1.LTS.aar`, `ffmpeg-kit-https-5.1.LTS.aar`, `ffmpeg-kit-https-gpl-5.1.LTS.aar`, `ffmpeg-kit-min-5.1.LTS.aar`, `ffmpeg-kit-min-gpl-5.1.LTS.aar` and `ffmpeg-kit-video-5.1.LTS.aar` from the [FFmpegKit](https://github.com/arthenica/ffmpeg-kit/) repository from the releases tab, under LTS build. 
-NOTE: If you only intend to build one binding then you only need to download that one aar file.
-4. Place in `Jars` folder.
-5. In the directory relative to the csproj file run the build command
-```
-msbuild FFmpegKit.Android.csproj /p:Configuration=Release  /p:FFmpegKitBuildType={TYPE} -target:Clean,Build
-```
-where `{TYPE}` is the FFmpegKit variant you are building. Possible options are `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl` or `Video`.
+The build needs **both** the .NET 8 and .NET 9 Android workloads. `global.json` pins the .NET 9 SDK, which builds both target frameworks — but `net8.0-android34.0` compiles against `Microsoft.Android.Ref.34`, and that pack ships only in the .NET 8 workload band.
 
-6. To build the nuget package run the pack command
+```sh
+# from a directory with no global.json, so the .NET 8 SDK is selected
+dotnet workload install android
+# then, from this repository
+dotnet workload install android
 ```
-nuget pack ../Nugets/Xamarin.FFmpegKit.{TYPE}.Android/Xamarin.FFmpegKit.{TYPE}.Android.nuspec -Symbols -SymbolPackageFormat snupkg
+
+### All variants
+
+```sh
+./FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
+./FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
+./FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit version
 ```
-where type is the same as from the previous step.
+
+### A single variant
+
+```sh
+dotnet pack FFmpegKit.Android/FFmpegKit.Android.csproj \
+    -c Release -p:FFmpegKitBuildType=Video -o artifacts
+```
+
+`FFmpegKitBuildType` is one of `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl`, `Video`. Each variant builds into its own `obj/` and `bin/` subdirectory, so they can be built in sequence without interfering with each other.
+
+## Tests
+
+**Package tests** run anywhere and inspect the packed `.nupkg` files — assembly present for both target frameworks, correct `.aar` for the variant, bound API surface, embedded `smart-exception` classes, nuspec metadata:
+
+```sh
+dotnet test tests/FFmpegKit.Android.PackageTests
+FFMPEGKIT_VARIANTS=Video dotnet test tests/FFmpegKit.Android.PackageTests  # only what you packed
+```
+
+**Device tests** install the packed package into a small app and run real FFmpeg commands on a device or emulator (encode raw frames to mp4, probe the result, check failure reporting). They consume the package from `./artifacts` via the local feed in `NuGet.config`, so they exercise exactly what gets published:
+
+```sh
+dotnet build tests/FFmpegKit.Android.DeviceTests -c Release \
+    -p:FFmpegKitPackageVersion=8.1.7 -t:Install
+adb shell am start -n com.sbokatuk.ffmpegkit.devicetests/.MainActivity
+adb logcat -s "FFmpegKitE2E:*"
+```
+
+The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
+
+## CI
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke test, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
+| [`release.yml`](.github/workflows/release.yml) | tag `v*` | Same build and tests at the tag's version, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
+
+Both call the reusable [`build.yml`](.github/workflows/build.yml). Publishing needs a `NUGET_API_KEY` repository secret.
+
+Note that prereleases pushed to nuget.org cannot be deleted, only unlisted — every pull request push publishes eight packages.

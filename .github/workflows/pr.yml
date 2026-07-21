@@ -1,0 +1,85 @@
+name: pull request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: resolve beta version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: resolve
+        run: |
+          # Base version lives in Directory.Build.props; the PR number and run number make each
+          # published prerelease unique, since nuget.org never allows a version to be reused.
+          base=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
+          if [ -z "${base}" ]; then
+            echo "::error::could not read FFmpegKitNativeVersion from Directory.Build.props"
+            exit 1
+          fi
+          version="${base}-beta.${{ github.event.number }}.${{ github.run_number }}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Building ${version}" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: build
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  publish:
+    name: publish beta to nuget.org
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    # Forked pull requests cannot read secrets, so the push would fail with a confusing
+    # authentication error. Those PRs still build and test; only the publish step is skipped.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "${NUGET_API_KEY}" ]; then
+            echo "::error::NUGET_API_KEY secret is not configured"
+            exit 1
+          fi
+          # Symbol packages are pushed automatically alongside each matching .nupkg.
+          dotnet nuget push "artifacts/*.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "${NUGET_API_KEY}" \
+            --skip-duplicate
+
+      - name: Summarise
+        run: |
+          {
+            echo "### Published \`${{ needs.version.outputs.version }}\` to nuget.org"
+            echo
+            for variant in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
+              id="Xamarin.FFmpegKit.${variant}.Android"
+              echo "- [${id}](https://www.nuget.org/packages/${id}/${{ needs.version.outputs.version }})"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
