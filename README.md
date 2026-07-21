@@ -80,15 +80,31 @@ Install the package via NuGet. There are various packages depending on what you 
 
 | Package | Link|
 |------------|-----|
-| FFmpegKit.Net.Audio.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Audio.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Audio.Android) |
-| FFmpegKit.Net.Full.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Full.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Full.Android) |
-| FFmpegKit.Net.FullGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.FullGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.FullGpl.Android) |
-| FFmpegKit.Net.Https.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Https.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Https.Android) |
-| FFmpegKit.Net.HttpsGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.HttpsGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.HttpsGpl.Android) |
-| FFmpegKit.Net.Min.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Min.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Min.Android) |
-| FFmpegKit.Net.MinGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.MinGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.MinGpl.Android) |
-| FFmpegKit.Net.Video.Android   | [![NuGet](https://img.shields.io/nuget/vpre/FFmpegKit.Net.Video.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android) |
+| FFmpegKit.Net.Audio.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Audio.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Audio.Android) |
+| FFmpegKit.Net.Full.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Full.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Full.Android) |
+| FFmpegKit.Net.FullGpl.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.FullGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.FullGpl.Android) |
+| FFmpegKit.Net.Https.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Https.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Https.Android) |
+| FFmpegKit.Net.HttpsGpl.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.HttpsGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.HttpsGpl.Android) |
+| FFmpegKit.Net.Min.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Min.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Min.Android) |
+| FFmpegKit.Net.MinGpl.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.MinGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.MinGpl.Android) |
+| FFmpegKit.Net.Video.Android   | [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android.svg?label=NuGet)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android) |
 
+
+### Supported tracks
+
+Three FFmpegKit lines are published in parallel, so you can pin to the FFmpeg generation your commands are validated against. All three are built from the same bindings and carry the same target frameworks, ABIs and licensing — only the native FFmpeg build differs. The badges above show the newest version overall, which is always the 8.x one.
+
+| Track | FFmpegKit | Install |
+| --- | --- | --- |
+| **`8.*`** (recommended) | 8.1.7 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
+| `7.*` | 7.1.6 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
+| `6.*` | 6.0.3 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
+
+A package version is its FFmpegKit version plus a binding revision — `8.1.7.1` is FFmpegKit `8.1.7`, binding revision `1`. A floating range therefore always resolves to the newest bindings for that FFmpeg line and never crosses into another one, which is what makes `8.*` safe to leave in a project file. Pin an exact version instead if you would rather approve every binding update yourself.
+
+Substitute any variant from the table above for `Video`. Every track ships `arm64-v8a` and `x86_64` at `minSdkVersion` 24, so choosing an older one is not a way to regain 32-bit support — see [Where the native binaries come from](#where-the-native-binaries-come-from).
+
+For what changed in each, see the [release notes](docs/release-notes).
 
 ### Migrating from `Xamarin.FFmpegKit.*`
 
@@ -188,6 +204,8 @@ dotnet build FFmpegKit.Android.Example -t:Install     # deploy to a running devi
 It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
 
 It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
+
+The sample targets API 26 rather than the package's own floor of 24, because it previews results with CommunityToolkit's `MediaElement`, which requires 26. Your own app can still target 24.
 
 The app is intentionally **not** part of `FFmpegKit.sln` and not built in CI: it needs the MAUI workload, which would add several minutes to every run while proving less than the device tests already do.
 
