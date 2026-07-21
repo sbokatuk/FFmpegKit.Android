@@ -103,13 +103,26 @@ jobs:
           native=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
           previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
 
+          # A curated docs/release-notes/<version>.md replaces the generated commit list when one
+          # exists. The second lookup drops the prerelease suffix, so v8.1.7-beta.2 reuses the
+          # notes written for 8.1.7 rather than silently falling back to raw commit subjects.
+          notes="docs/release-notes/${VERSION}.md"
+          [ -f "${notes}" ] || notes="docs/release-notes/${VERSION%%-*}.md"
+
           {
-            echo "## What's changed"
-            echo
-            if [ -n "${previous}" ]; then
-              git log --no-merges --pretty='- %s (%h)' "${previous}..${GITHUB_REF_NAME}"
+            if [ -f "${notes}" ]; then
+              echo "==> using curated notes from ${notes}" >&2
+              cat "${notes}"
             else
-              git log --no-merges --pretty='- %s (%h)' "${GITHUB_REF_NAME}"
+              echo "## What's changed"
+              echo
+              if [ -n "${previous}" ]; then
+                git log --no-merges --pretty='- %s (%h)' "${previous}..${GITHUB_REF_NAME}"
+              else
+                # No previous tag: listing every commit would reach back to the repository's
+                # first commit, which is noise rather than a changelog.
+                echo "Initial release."
+              fi
             fi
             echo
             if [ -n "${previous}" ]; then
