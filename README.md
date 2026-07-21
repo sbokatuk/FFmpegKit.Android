@@ -1,7 +1,5 @@
 # FFmpegKit.Android
 
-> ⚠️ **This project is under active development.** APIs, repository structure, and NuGet packages may change without notice. Use in production at your own risk.
-
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
 Built against the prebuilt Android binaries from **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)** — see [Where the native binaries come from](#where-the-native-binaries-come-from) for why that fork and not the original.
