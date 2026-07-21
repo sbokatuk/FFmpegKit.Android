@@ -124,7 +124,7 @@ jobs:
             echo "| Package | License | NuGet |"
             echo "| --- | --- | --- |"
             for variant in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
-              id="Xamarin.FFmpegKit.${variant}.Android"
+              id="FFmpegKit.Net.${variant}.Android"
               case "${variant}" in
                 *Gpl) license="MIT AND GPL-3.0-only" ;;
                 *)    license="MIT AND LGPL-3.0-only" ;;
@@ -133,7 +133,7 @@ jobs:
             done
             echo
             echo "\`\`\`"
-            echo "dotnet add package Xamarin.FFmpegKit.Video.Android --version ${VERSION}"
+            echo "dotnet add package FFmpegKit.Net.Video.Android --version ${VERSION}"
             echo "\`\`\`"
             echo
             echo "## Licensing"

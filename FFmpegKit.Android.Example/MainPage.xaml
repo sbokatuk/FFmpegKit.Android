@@ -15,7 +15,7 @@
                 SemanticProperties.HeadingLevel="Level1" />
 
             <Label
-                Text="Pick a conversion, run it with the Xamarin.FFmpegKit.Full.Android NuGet package, and compare the result to the original."
+                Text="Pick a conversion, run it with the FFmpegKit.Net.Full.Android NuGet package, and compare the result to the original."
                 Style="{StaticResource SubHeadline}" />
 
             <Label Text="Conversion type" FontAttributes="Bold" />

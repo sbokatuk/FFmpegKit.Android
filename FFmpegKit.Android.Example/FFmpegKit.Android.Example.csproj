@@ -50,7 +50,7 @@
       does not come from nuget.org, so the example exercises what you just built.
       Full is the LGPL variant; the -gpl ones would make this sample GPL-3.0.
     -->
-    <PackageReference Include="Xamarin.FFmpegKit.Full.Android" Version="$(FFmpegKitVersion)" />
+    <PackageReference Include="FFmpegKit.Net.Full.Android" Version="$(FFmpegKitVersion)" />
   </ItemGroup>
 
 </Project>
