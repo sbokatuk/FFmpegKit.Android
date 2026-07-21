@@ -4,7 +4,7 @@
 
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
-Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next)**
+Built against the prebuilt Android binaries from **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)** — see [Where the native binaries come from](#where-the-native-binaries-come-from) for why that fork and not the original.
 
 ## About
 
@@ -16,7 +16,17 @@ Each .NET SDK's Android workload supports only two target frameworks — the .NE
 
 ### Where the native binaries come from
 
-The original `arthenica/ffmpeg-kit` repository is archived and its `v5.1.LTS` release assets have been deleted; its successor `ffmpeg-kit-next` is source-only. The `.aar` files are therefore pulled from the community-maintained Maven Central mirror `dev.ffmpegkit-maintained` — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
+FFmpegKit has three relevant repositories, and only one of them still ships usable Android binaries:
+
+| Repository | State | Prebuilt `.aar` |
+| --- | --- | --- |
+| [`arthenica/ffmpeg-kit`](https://github.com/arthenica/ffmpeg-kit) | archived | none — the `v5.1.LTS` release assets were deleted; Maven Central stops at `6.0.LTS` |
+| [`arthenica/ffmpeg-kit-next`](https://github.com/arthenica/ffmpeg-kit-next) | active, the official continuation | none — releases up to `v8.1.0` carry source only, zero binary assets |
+| [`ffmpegkit-maintained/ffmpeg`](https://github.com/ffmpegkit-maintained/ffmpeg) | active community fork | **yes** — published to Maven Central as `dev.ffmpegkit-maintained`, currently `8.1.7` |
+
+So the `.aar` files come from the community fork, via Maven Central — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). It keeps the original `com.arthenica.ffmpegkit` Java API, so the binding and its `Ffmpegkit.Droid` namespace are unaffected by the switch. Should `ffmpeg-kit-next` start publishing binaries, moving over would be a change to `FetchJars.sh` and `FFmpegKitNativeVersion` only.
+
+The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
 `FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
@@ -87,7 +97,7 @@ Execute your FFmpeg command
 FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 ```
 
-More examples and usage can be found in the [FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android).
+More examples and usage can be found in the [original FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android). That repository is archived, but the Java API it documents is the one these bindings expose, so it remains the reference.
 
 
 ## Building
