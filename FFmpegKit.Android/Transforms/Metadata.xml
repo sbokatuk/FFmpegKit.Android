@@ -8,25 +8,16 @@
   -->
   <attr path="/api/package[@name='com.arthenica.ffmpegkit']" name="managedName">Ffmpegkit.Droid</attr>
 
+  <!--
+    AbstractSession's protected backing fields (createTime, endTime, returnCode, ...) collide with
+    the properties generated from their getters. This file used to carry a remove-node rule per
+    field; they are gone because they achieved nothing measurable. Removing the fields here and
+    letting the generator skip them produce byte-identical generated code, and the rules only
+    trade the generator's BG8401 "duplicate field or property name" warnings for the same number
+    of BG8A00 "matched no nodes" ones. BG8401 is suppressed in the .csproj instead.
+  -->
 
   <!-- rename getName to GetAbiName so that when it becomes a parameter it does not become Name which conflicts with Enum.Name -->
   <attr path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='Abi']/method[@name='getName']" name="managedName">GetAbiName</attr>
 
-  <!--
-    AbstractSession exposes protected backing fields whose managed names collide with the
-    properties generated from their getters. The generator resolves the clash by skipping
-    the field and warning (BG8401) for each one, so they are removed here instead: same
-    resulting API, without 88 warnings per build.
-  -->
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='createTime']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='endTime']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='failStackTrace']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='future']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logCallback']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logRedirectionStrategy']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='logs']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='returnCode']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='sessionId']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='startTime']" />
-  <remove-node path="/api/package[@name='com.arthenica.ffmpegkit']/class[@name='AbstractSession']/field[@name='state']" />
 </metadata>
