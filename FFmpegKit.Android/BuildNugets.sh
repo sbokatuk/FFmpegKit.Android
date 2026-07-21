@@ -5,8 +5,12 @@ set -e
 # Builds and packs every FFmpegKit variant. Run Jars/FetchJars.sh first.
 #
 # Usage:
-#   ./BuildNugets.sh                 # version from Directory.Build.props
-#   ./BuildNugets.sh 8.1.7-beta.4    # explicit version
+#   ./BuildNugets.sh                       # version from Directory.Build.props
+#   ./BuildNugets.sh 8.1.7-beta.4          # explicit package version
+#   ./BuildNugets.sh 6.0.3 6.0.3           # ...and bind an older FFmpegKit LTS line
+#
+# The second argument selects which native FFmpegKit version to bind. Run
+# Jars/FetchJars.sh with the same version first, so the matching .aar files are present.
 #
 # Packages are written to ../artifacts.
 #
@@ -18,6 +22,7 @@ set -e
 cd "$(dirname "$0")"
 
 VERSION="$1"
+NATIVE_VERSION="$2"
 ROOT="$(cd .. && pwd)"
 PROJECT="$ROOT/FFmpegKit.Android/FFmpegKit.Android.csproj"
 OUTPUT="$ROOT/artifacts"
@@ -38,6 +43,17 @@ if [ -n "$VERSION" ]; then
     VERSION_ARG="-p:Version=$VERSION"
 fi
 
+NATIVE_ARG=""
+if [ -n "$NATIVE_VERSION" ]; then
+    case "$NATIVE_VERSION" in
+        *[!A-Za-z0-9.+_-]*)
+            echo "error: invalid native version '$NATIVE_VERSION'" >&2
+            exit 1
+            ;;
+    esac
+    NATIVE_ARG="-p:FFmpegKitNativeVersion=$NATIVE_VERSION"
+fi
+
 PASS1_DIR="$OUTPUT/.net9-pass"
 PASS2_DIR="$OUTPUT/.net10-pass"
 rm -rf "$PASS1_DIR" "$PASS2_DIR"
@@ -54,7 +70,7 @@ for build_type in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
         -c Release \
         -p:FFmpegKitBuildType="$build_type" \
         -p:FFmpegKitSdkBand="$PASS1_BAND" \
-        $VERSION_ARG \
+        $VERSION_ARG $NATIVE_ARG \
         -o "$PASS1_DIR"
 
     echo "==> packing $build_type ($PASS2_BAND band)"
@@ -62,7 +78,7 @@ for build_type in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
         -c Release \
         -p:FFmpegKitBuildType="$build_type" \
         -p:FFmpegKitSdkBand="$PASS2_BAND" \
-        $VERSION_ARG \
+        $VERSION_ARG $NATIVE_ARG \
         -o "$PASS2_DIR")
 done
 

@@ -11,6 +11,13 @@ on:
         description: NuGet version to stamp on every package.
         required: true
         type: string
+      native-version:
+        description: >
+          FFmpegKit native version to bind against. Defaults to FFmpegKitNativeVersion in
+          Directory.Build.props; set it to build a package for an older LTS line, e.g. 6.0.3.
+        required: false
+        default: ''
+        type: string
       e2e-variant:
         description: Which variant the emulator smoke test installs and runs.
         required: false
@@ -69,19 +76,35 @@ jobs:
         with:
           packages: 'platforms;android-34 platforms;android-35 platforms;android-36'
 
+      - name: Resolve native version
+        id: native
+        run: |
+          version="${{ inputs.native-version }}"
+          if [ -z "${version}" ]; then
+            version=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
+          fi
+          if [ -z "${version}" ]; then
+            echo "::error::could not determine the FFmpegKit native version"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Binding FFmpegKit ${version}" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Cache FFmpegKit binaries
         id: jars
         uses: actions/cache@v4
         with:
           path: FFmpegKit.Android/Jars
-          key: ffmpegkit-jars-${{ hashFiles('FFmpegKit.Android/Jars/FetchJars.sh') }}
+          # The native version is part of the key: without it a build for an older LTS line would
+          # restore the previous version's .aar files and fail on the ones it actually needs.
+          key: ffmpegkit-jars-${{ steps.native.outputs.version }}-${{ hashFiles('FFmpegKit.Android/Jars/FetchJars.sh') }}
 
       - name: Fetch FFmpegKit binaries
         if: steps.jars.outputs.cache-hit != 'true'
-        run: ./FFmpegKit.Android/Jars/FetchJars.sh
+        run: ./FFmpegKit.Android/Jars/FetchJars.sh "${{ steps.native.outputs.version }}"
 
       - name: Pack all variants
-        run: ./FFmpegKit.Android/BuildNugets.sh "${{ inputs.version }}"
+        run: ./FFmpegKit.Android/BuildNugets.sh "${{ inputs.version }}" "${{ steps.native.outputs.version }}"
 
       - name: Validate packages
         run: dotnet test tests/FFmpegKit.Android.PackageTests --logger 'trx;LogFileName=package-tests.trx'

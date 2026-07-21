@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.resolve.outputs.version }}
+      native-version: ${{ steps.resolve.outputs.native-version }}
       prerelease: ${{ steps.resolve.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
@@ -29,10 +30,12 @@ jobs:
             exit 1
           fi
 
-          native=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
-          if [ "${version%%-*}" != "${native}" ]; then
-            echo "::warning::tag version ${version} does not match FFmpegKitNativeVersion ${native}"
-          fi
+          # The tag drives which native FFmpegKit version is bound, so an older LTS line is
+          # released simply by tagging it - v6.0.3 builds against FFmpegKit 6.0.3. Any prerelease
+          # suffix is dropped, and a fourth version component is treated as a binding-only
+          # revision: v6.0.3.1 still binds native 6.0.3.
+          native=$(printf '%s' "${version%%-*}" | cut -d. -f1-3)
+          echo "native-version=${native}" >> "$GITHUB_OUTPUT"
 
           case "${version}" in
             *-*) prerelease=true ;;
@@ -49,6 +52,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       version: ${{ needs.version.outputs.version }}
+      native-version: ${{ needs.version.outputs.native-version }}
 
   publish:
     name: publish to nuget.org and create release
@@ -100,7 +104,9 @@ jobs:
 
       - name: Compose release notes
         run: |
-          native=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
+          # Resolved from the tag, not Directory.Build.props, so a release of an older LTS line
+          # reports the version it actually bound rather than whatever the branch defaults to.
+          native="${{ needs.version.outputs.native-version }}"
           previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
 
           # A curated docs/release-notes/<version>.md replaces the generated commit list when one

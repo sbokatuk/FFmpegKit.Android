@@ -26,6 +26,29 @@ So the `.aar` files come from the community fork, via Maven Central — see [`Fe
 
 The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
+The fork currently publishes three lines, each with all eight variants:
+
+| FFmpegKit | ABIs | minSdk |
+| --- | --- | --- |
+| `6.0.3` | `arm64-v8a`, `x86_64` | 24 |
+| `7.1.6` | `arm64-v8a`, `x86_64` | 24 |
+| `8.1.7` | `arm64-v8a`, `x86_64` | 24 |
+
+None of them ship 32-bit binaries, so dropping back to an older line does not restore `armeabi-v7a` or `x86` support.
+
+### Releasing an older line
+
+Package version and native version are the same number, so the tag selects both: **`v6.0.3` builds against FFmpegKit 6.0.3** and publishes `6.0.3` packages. A prerelease suffix is ignored when resolving the native version (`v7.1.6-beta.1` → native `7.1.6`), and a fourth component marks a binding-only revision (`v6.0.3.1` → native `6.0.3`). No branch or `Directory.Build.props` edit is needed.
+
+Locally, pass the native version as the second argument:
+
+```sh
+./FFmpegKit.Android/Jars/FetchJars.sh 6.0.3     # fetch that line's .aar files
+./FFmpegKit.Android/BuildNugets.sh 6.0.3 6.0.3  # package version, native version
+```
+
+NuGet orders `8.1.7` above `6.0.3`, so publishing an older line later does not change what `dotnet add package` resolves by default.
+
 `FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
 ## License
