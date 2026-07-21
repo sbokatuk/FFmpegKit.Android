@@ -7,19 +7,45 @@ set -euo pipefail
 
 VARIANT="${1:-Video}"
 VERSION="${2:?a package version is required}"
+TARGET_FRAMEWORK="${3:-net10.0-android36.0}"
 
 PACKAGE_NAME="com.sbokatuk.ffmpegkit.devicetests"
 LOG_FILE="device-tests-logcat.txt"
+# CI emulators are x86_64; override when running this against a local arm64 emulator or device.
+DEVICE_RID="${FFMPEGKIT_DEVICE_RID:-android-x64}"
 POLL_ATTEMPTS=60
 POLL_INTERVAL=5
 
-echo "==> installing device tests (variant=${VARIANT}, version=${VERSION})"
-dotnet build tests/FFmpegKit.Android.DeviceTests/FFmpegKit.Android.DeviceTests.csproj \
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+PROJECT="${REPO_ROOT}/tests/FFmpegKit.Android.DeviceTests/FFmpegKit.Android.DeviceTests.csproj"
+
+# The .NET 9 band builds net8/net9 and the .NET 10 band builds net9/net10, so pick the SDK that
+# owns the requested target framework. The SDK is resolved from the working directory, and the
+# repository's global.json pins .NET 9, hence the scratch directory.
+case "${TARGET_FRAMEWORK}" in
+    net10.0-*) sdk_major=10 ;;
+    *)         sdk_major=9 ;;
+esac
+
+sdk_version="$(dotnet --list-sdks | grep "^${sdk_major}\." | tail -1 | cut -d' ' -f1)"
+if [ -z "${sdk_version}" ]; then
+    echo "::error::no .NET ${sdk_major} SDK installed, cannot build ${TARGET_FRAMEWORK}"
+    exit 1
+fi
+
+SDK_DIR="$(mktemp -d)"
+trap 'rm -rf "${SDK_DIR}"' EXIT
+printf '{ "sdk": { "version": "%s", "rollForward": "latestFeature" } }\n' "${sdk_version}" \
+    > "${SDK_DIR}/global.json"
+
+echo "==> installing device tests (variant=${VARIANT}, version=${VERSION}, tfm=${TARGET_FRAMEWORK}, sdk=${sdk_version})"
+( cd "${SDK_DIR}" && dotnet build "${PROJECT}" \
     --configuration Release \
     -p:FFmpegKitVariant="${VARIANT}" \
     -p:FFmpegKitPackageVersion="${VERSION}" \
-    -p:RuntimeIdentifier=android-x64 \
-    -t:Install
+    -p:FFmpegKitDeviceTargetFramework="${TARGET_FRAMEWORK}" \
+    -p:RuntimeIdentifier="${DEVICE_RID}" \
+    -t:Install )
 
 echo "==> launching"
 adb logcat -c

@@ -10,7 +10,9 @@ Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffm
 
 This repository contains .NET bindings (`AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android. One project, `FFmpegKit.Android`, produces all eight package variants — the variant is selected with the `FFmpegKitBuildType` MSBuild property.
 
-Packages target `net8.0-android34.0` and `net9.0-android35.0`.
+Packages target `net8.0-android34.0`, `net9.0-android35.0` and `net10.0-android36.0`.
+
+Each .NET SDK's Android workload supports only two target frameworks — the .NET 9 band ships `Microsoft.Android.Sdk.net8` and `.net9`, the .NET 10 band ships `.net9` and `.net10` — so no single `dotnet pack` can produce all three. [`BuildNugets.sh`](FFmpegKit.Android/BuildNugets.sh) packs once per band and [`build/merge-packages.py`](build/merge-packages.py) merges the `lib/` trees and nuspec dependency groups into one package per variant.
 
 ### Where the native binaries come from
 
@@ -59,14 +61,17 @@ More examples and usage can be found in the [FFmpegKit wiki](https://github.com/
 
 ### Prerequisites
 
-The build needs **both** the .NET 8 and .NET 9 Android workloads. `global.json` pins the .NET 9 SDK, which builds both target frameworks — but `net8.0-android34.0` compiles against `Microsoft.Android.Ref.34`, and that pack ships only in the .NET 8 workload band.
+The .NET 8, 9 and 10 SDKs, each with the Android workload installed — every band supplies a different reference pack (`Ref.34`, `Ref.35`, `Ref.36`). The SDK is chosen by the `global.json` in the *working directory*, so install each band from a directory pinned to it:
 
 ```sh
-# from a directory with no global.json, so the .NET 8 SDK is selected
-dotnet workload install android
-# then, from this repository
-dotnet workload install android
+for major in 8 9 10; do
+  dir=$(mktemp -d) && cd "$dir"
+  dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep "^${major}\." | tail -1 | cut -d' ' -f1)" --force
+  dotnet workload install android
+done
 ```
+
+Python 3 is also needed, for the package merge step.
 
 ### All variants
 
@@ -79,11 +84,12 @@ dotnet workload install android
 ### A single variant
 
 ```sh
+# net8 + net9 assets (.NET 9 SDK, per global.json)
 dotnet pack FFmpegKit.Android/FFmpegKit.Android.csproj \
-    -c Release -p:FFmpegKitBuildType=Video -o artifacts
+    -c Release -p:FFmpegKitBuildType=Video -p:FFmpegKitSdkBand=net9 -o artifacts
 ```
 
-`FFmpegKitBuildType` is one of `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl`, `Video`. Each variant builds into its own `obj/` and `bin/` subdirectory, so they can be built in sequence without interfering with each other.
+`FFmpegKitBuildType` is one of `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl`, `Video`. `FFmpegKitSdkBand` is `net9` or `net10` and must match the SDK actually running the build. Each variant builds into its own `obj/` and `bin/` subdirectory, so they can be built in sequence without interfering with each other.
 
 ## Tests
 
@@ -97,13 +103,12 @@ FFMPEGKIT_VARIANTS=Video dotnet test tests/FFmpegKit.Android.PackageTests  # onl
 **Device tests** install the packed package into a small app and run real FFmpeg commands on a device or emulator (encode raw frames to mp4, probe the result, check failure reporting). They consume the package from `./artifacts` via the local feed in `NuGet.config`, so they exercise exactly what gets published:
 
 ```sh
-dotnet build tests/FFmpegKit.Android.DeviceTests -c Release \
-    -p:FFmpegKitPackageVersion=8.1.7 -t:Install
-adb shell am start -n com.sbokatuk.ffmpegkit.devicetests/.MainActivity
-adb logcat -s "FFmpegKitE2E:*"
+# builds, installs, runs and reports - the same script CI uses
+FFMPEGKIT_DEVICE_RID=android-arm64 \
+    ./.github/scripts/run-device-tests.sh Video 8.1.7 net10.0-android36.0
 ```
 
-The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
+Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
 
 ## CI
 

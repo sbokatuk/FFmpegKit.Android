@@ -16,6 +16,14 @@ on:
         required: false
         default: Video
         type: string
+      e2e-target-framework:
+        description: >
+          Which of the package's target frameworks the emulator smoke test runs against.
+          Defaults to net10, whose assets are produced by the merge step in BuildNugets.sh and so
+          are the ones worth proving at runtime.
+        required: false
+        default: net10.0-android36.0
+        type: string
 
 env:
   DOTNET_NOLOGO: 'true'
@@ -32,29 +40,34 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          # 9.0.x builds everything (global.json pins it). 8.0.x is installed only so that its
-          # Android workload band is available - see the workload step below.
+          # 9.0.x packs net8+net9 (global.json pins it) and 10.0.x packs net10. 8.0.x is installed
+          # only so that its Android workload band is available - see the workload step below.
           dotnet-version: |
             8.0.x
             9.0.x
+            10.0.x
 
-      - name: Install Android workloads for both SDK bands
+      - name: Install Android workloads for every SDK band
         run: |
-          # net8.0-android34.0 compiles against Microsoft.Android.Ref.34, which ships only in the
-          # .NET 8 workload band; the .NET 9 band carries Ref.35. global.json pins the .NET 9 SDK
-          # for the build, so install the .NET 8 band from a scratch directory where global.json
-          # does not apply, then install the .NET 9 band normally.
-          mkdir -p "${RUNNER_TEMP}/sdk8"
-          pushd "${RUNNER_TEMP}/sdk8"
-          dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep '^8\.' | tail -1 | cut -d' ' -f1)" --force
-          dotnet workload install android
-          popd
-          dotnet workload install android
+          # Each band supplies different reference packs: net8.0-android34.0 compiles against
+          # Microsoft.Android.Ref.34 from the .NET 8 band, net9.0-android35.0 against Ref.35 from
+          # the .NET 9 band, and net10.0-android36.0 against Ref.36 from the .NET 10 band.
+          # The SDK is chosen by the global.json in the working directory, so each band is
+          # installed from a scratch directory pinned to that SDK.
+          for major in 8 9 10; do
+            dir="${RUNNER_TEMP}/sdk${major}"
+            mkdir -p "${dir}"
+            sdk=$(dotnet --list-sdks | grep "^${major}\." | tail -1 | cut -d' ' -f1)
+            echo "installing android workload for SDK ${sdk}"
+            ( cd "${dir}" \
+              && dotnet new globaljson --sdk-version "${sdk}" --force \
+              && dotnet workload install android )
+          done
 
       - name: Set up Android SDK platforms
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-34 platforms;android-35'
+          packages: 'platforms;android-34 platforms;android-35 platforms;android-36'
 
       - name: Cache FFmpegKit binaries
         id: jars
@@ -102,15 +115,24 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: |
+            9.0.x
+            10.0.x
 
       - name: Install Android workload
-        run: dotnet workload install android
+        run: |
+          # The device app is built for the target framework under test, so install the workload
+          # for the band that owns it. global.json pins .NET 9; the app may need .NET 10.
+          mkdir -p "${RUNNER_TEMP}/sdk10"
+          ( cd "${RUNNER_TEMP}/sdk10" \
+            && dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep '^10\.' | tail -1 | cut -d' ' -f1)" --force \
+            && dotnet workload install android )
+          dotnet workload install android
 
       - name: Set up Android SDK platforms
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35'
+          packages: 'platforms;android-35 platforms;android-36'
 
       - name: Download packages
         uses: actions/download-artifact@v4
@@ -135,7 +157,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: ./.github/scripts/run-device-tests.sh "${{ inputs.e2e-variant }}" "${{ inputs.version }}"
+          script: ./.github/scripts/run-device-tests.sh "${{ inputs.e2e-variant }}" "${{ inputs.version }}" "${{ inputs.e2e-target-framework }}"
 
       - name: Upload device logs
         if: always()

@@ -355,3 +355,8 @@ MigrationBackup/
 *.jar
 *.aar
 **/MonoAndroid10/*
+
+device-tests-logcat.txt
+
+# Device test output
+device-tests-logcat.txt
