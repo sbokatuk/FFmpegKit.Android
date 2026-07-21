@@ -18,8 +18,12 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
 
-    <!-- FFmpegKit's native .aar requires minSdkVersion 24. -->
-    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <!--
+      FFmpegKit's native .aar requires minSdkVersion 24, but this sample previews the result with
+      CommunityToolkit's MediaElement, which requires 26. The sample therefore takes the higher
+      floor; an app that does not use MediaElement can still target 24.
+    -->
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
 
     <!--
       Which build of the FFmpegKit package to demo. Defaults to FFmpegKitNativeVersion from
