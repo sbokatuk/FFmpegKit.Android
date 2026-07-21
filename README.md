@@ -4,30 +4,18 @@
 
 Xamarin/.NET for Android bindings for the native **FFmpegKit** library.
 
-Original project: **[arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next)**
+Original project: **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)**
 
 ## About
 
-This repository contains .NET bindings (`.csproj` with `AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android, along with scaffolding for the following NuGet packages:
-
-- `Xamarin.FFmpegKit.Video.Android`
-- `Xamarin.FFmpegKit.FullGpl.Android`
-
-## Build
-
-1. Download the desired `.aar` release from [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next/releases).
-2. Place the file into `FFmpegKit.Android/Jars`.
-3. Make sure the `.aar` filename referenced in `<LibraryProjectZip>` inside `FFmpegKit.Android.csproj` matches the downloaded file.
-4. Open `FFmpegKit.sln` and build the project.
-
-## License
-
-The bindings are distributed under the [MIT](LICENSE) license. The license of the native FFmpegKit/FFmpeg library itself is defined by the original project — see [arthenica/ffmpeg-kit-next](https://github.com/arthenica/ffmpeg-kit-next).
-Xamarin.Android bindings of [FFmpegKit](https://github.com/arthenica/ffmpeg-kit)
-
+This repository contains .NET bindings (`.csproj` with `AndroidClassParser=class-parse`) on top of the FFmpegKit `.aar` build for Android, along with scaffolding for the following NuGet packages.
 
 ## Installation
-Install the package via NuGet. There are various packages depending on what you plan to use and if you require a GPL compatible package or not. These package variants match the different variants built in the FFmpegKit repository.
+
+Install the package that matches what you need via NuGet (`dotnet add package <name>` or a `<PackageReference Include="<name>" Version="..." />` in your `.csproj`). The variants mirror the different native FFmpegKit builds:
+
+- `Audio`/`Video`/`Min`/`Https`/`Full` are non-GPL builds (safe to use in closed-source apps).
+- `MinGpl`/`HttpsGpl`/`FullGpl` additionally bundle GPL-licensed codecs (e.g. `x264`); using them means your app must comply with the GPL for the parts that link against FFmpegKit.
 
 | Package | Link|
 |------------|-----|
@@ -40,52 +28,90 @@ Install the package via NuGet. There are various packages depending on what you 
 | Xamarin.FFmpegKit.MinGpl.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.MinGpl.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.MinGpl.Android) |
 | Xamarin.FFmpegKit.Video.Android   | [![NuGet](https://img.shields.io/nuget/vpre/Xamarin.FFmpegKit.Video.Android.svg?label=NuGet)](https://www.nuget.org/packages/Xamarin.FFmpegKit.Video.Android) |
 
-
 ## Usage
 
-Include `Ffmpegkit.Droid` namespace
-``` c#
+Include the `Ffmpegkit.Droid` namespace:
+```c#
 using Ffmpegkit.Droid;
 ```
 
-Execute your FFmpeg command
-
-```
+Execute your FFmpeg command:
+```c#
 FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 ```
 
 More examples and usage can be found in the [FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android).
 
+## A note on binary sources
+
+`arthenica/ffmpeg-kit` is archived and its `v5.1.LTS` release assets have been deleted from GitHub. Its successor, `ffmpeg-kit-next`, is source-only (no prebuilt binaries since v6.1.0). Because of this, the `.aar` files used to build these bindings are fetched from the community-maintained mirror **[dev.ffmpegkit-maintained](https://repo1.maven.org/maven2/dev/ffmpegkit-maintained/)** on Maven Central, currently pinned to version **8.1.7**.
 
 ## Building with build scripts (macOS tested)
-1. Navigate to the Jars directory in terminal
-2. Run FetchJars.sh 
-    ``` sh
-    $ ./FetchJars.sh
-    ```
-3. Go back up one directory
-4. Run BuildNugets.sh
-    ``` sh
-    $ ./BuildNugets.sh
-    ```
-5. This will now create nupkg packages of all 8 variants of FFmpegKit.Android.
 
-Tip: If you only want to build one variant of FFmpegKit.Android and its nuget packages, comment out other lines in `FetchJars.sh` and `BuildNugets.sh`.
+The simplest way to build everything is the top-level wrapper script, which fetches the `.aar` binaries for a given FFmpegKit version and then builds all NuGet package variants against them:
+
+```sh
+$ ./BuildAll.sh 8.1.7
+```
+
+The version argument is optional and defaults to `8.1.7`. Under the hood it just runs, in order:
+
+```sh
+cd FFmpegKit.Android/Jars
+./FetchJars.sh 8.1.7
+cd ..
+./BuildNugets.sh 8.1.7
+```
+
+- `FetchJars.sh` downloads the `.aar` files for the given version (plus the smart-exception jars) into `Jars/`.
+- `BuildNugets.sh` builds all 8 variants (passing `/p:FFmpegKitVersion=8.1.7` to `msbuild` so the `.csproj` picks up the matching `.aar` filenames), runs `Nugets/UpdateNuspecVersions.sh 8.1.7` to stamp the same version into every `.nuspec`'s `<version>` element before packing the NuGet packages, and finally runs `FFmpegKit.Android.Example/UpdateExampleReference.sh 8.1.7` to point the example app (see below) at the version just built. Because this last step lives in `BuildNugets.sh` itself, the example stays in sync even if you run `BuildNugets.sh` directly instead of through `BuildAll.sh`.
+
+This will create nupkg packages of all 8 variants of FFmpegKit.Android.
+
+Tip: If you only want to build one variant of FFmpegKit.Android and its NuGet package, comment out the other lines in `FetchJars.sh` and `BuildNugets.sh`.
 
 ## Building manually
-1. Download `smart-exception-common-0.2.1.jar` and `smart-exception-java-0.2.1.jar` from the [smart-exception](https://github.com/tanersener/smart-exception/) repository.
-2. Place in `Jars` folder.
-3. Download `ffmpeg-kit-audio-5.1.LTS.aar`, `ffmpeg-kit-full-5.1.LTS.aar`, `ffmpeg-kit-full-gpl-5.1.LTS.aar`, `ffmpeg-kit-https-5.1.LTS.aar`, `ffmpeg-kit-https-gpl-5.1.LTS.aar`, `ffmpeg-kit-min-5.1.LTS.aar`, `ffmpeg-kit-min-gpl-5.1.LTS.aar` and `ffmpeg-kit-video-5.1.LTS.aar` from the [FFmpegKit](https://github.com/arthenica/ffmpeg-kit/) repository from the releases tab, under LTS build. 
-NOTE: If you only intend to build one binding then you only need to download that one aar file.
-4. Place in `Jars` folder.
-5. In the directory relative to the csproj file run the build command
-```
-msbuild FFmpegKit.Android.csproj /p:Configuration=Release  /p:FFmpegKitBuildType={TYPE} -target:Clean,Build
-```
-where `{TYPE}` is the FFmpegKit variant you are building. Possible options are `Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl` or `Video`.
 
-6. To build the nuget package run the pack command
+1. Download `smart-exception-common-0.2.1.jar` and `smart-exception-java-0.2.1.jar` from the [smart-exception](https://github.com/tanersener/smart-exception/) repository. Place them in the `Jars` folder.
+2. Download the `.aar` variants you need for the version you want to build (e.g. `ffmpeg-kit-audio-8.1.7.aar`, `ffmpeg-kit-full-8.1.7.aar`, `ffmpeg-kit-full-gpl-8.1.7.aar`, `ffmpeg-kit-https-8.1.7.aar`, `ffmpeg-kit-https-gpl-8.1.7.aar`, `ffmpeg-kit-min-8.1.7.aar`, `ffmpeg-kit-min-gpl-8.1.7.aar`, `ffmpeg-kit-video-8.1.7.aar`) from [dev.ffmpegkit-maintained on Maven Central](https://repo1.maven.org/maven2/dev/ffmpegkit-maintained/). Place them in the `Jars` folder.
+
+   NOTE: If you only intend to build one binding, you only need to download that one `.aar` file.
+3. From the directory containing the `.csproj` file, run the build command:
+    ```
+    msbuild FFmpegKit.Android.csproj /p:Configuration=Release /p:FFmpegKitVersion={VERSION} /p:FFmpegKitBuildType={TYPE} -target:Clean,Build
+    ```
+    where `{TYPE}` is the FFmpegKit variant you are building (`Audio`, `Full`, `FullGpl`, `Https`, `HttpsGpl`, `Min`, `MinGpl` or `Video`) and `{VERSION}` is the FFmpegKit version whose `.aar` you downloaded (defaults to `8.1.7` if omitted).
+4. To build the NuGet package, run the pack command:
+    ```
+    nuget pack ../Nugets/Xamarin.FFmpegKit.{TYPE}.Android/Xamarin.FFmpegKit.{TYPE}.Android.nuspec -Symbols -SymbolPackageFormat snupkg
+    ```
+    where `{TYPE}` is the same as in the previous step.
+
+## Example app
+
+`FFmpegKit.Android.Example` is a minimal .NET MAUI app (Android only, `net8.0-android`) used to smoke-test the built NuGet package: it bundles a small sample video, lets you pick a conversion, runs it with FFmpegKit, and plays the original and the result side by side (via `CommunityToolkit.Maui.MediaElement`) so you can compare them.
+
+> ⚠️ **The example does not use a package from nuget.org.** It restores `Xamarin.FFmpegKit.Full.Android` from a local `.nupkg` that `BuildNugets.sh` produces (see below), so **you must run `./BuildAll.sh` (or `FFmpegKit.Android/BuildNugets.sh`) at least once before the example will restore or build.** Without that `.nupkg` present, `dotnet restore`/`dotnet build` on the example fails with a NuGet "unable to find package" error.
+
+Available conversions (kept minimal on purpose):
+- **Resize to 160x120** — `-vf scale=160:120 -c:v mpeg4 -c:a aac`
+- **Grayscale** — `-vf hue=s=0 -c:v mpeg4 -c:a aac`
+- **Extract audio only (AAC)** — `-vn -c:a aac`
+
+It references the **`Xamarin.FFmpegKit.Full.Android`** package directly from the local build output rather than nuget.org:
+
+- `NuGet.Config` in the example project adds a local package source, `LocalFFmpegKit`, pointing at `../FFmpegKit.Android` — the folder `BuildNugets.sh` packs the `.nupkg` into.
+- The `<PackageReference>` version is driven by the `FFmpegKitVersion` MSBuild property (default `8.1.7`).
+
+After `BuildNugets.sh` packs a version, it calls `FFmpegKit.Android.Example/UpdateExampleReference.sh <version>` to update `FFmpegKitVersion` in the example's `.csproj` to match, and clears any stale copy of that version from the local NuGet cache (`~/.nuget/packages`) so the example always restores the freshly built `.nupkg` instead of an old cached one.
+
+To run it:
+```sh
+./BuildAll.sh                          # 1. build the local Xamarin.FFmpegKit.Full.Android .nupkg first
+cd FFmpegKit.Android.Example
+dotnet build -t:Run -f net8.0-android   # 2. only then restore/run the example
 ```
-nuget pack ../Nugets/Xamarin.FFmpegKit.{TYPE}.Android/Xamarin.FFmpegKit.{TYPE}.Android.nuspec -Symbols -SymbolPackageFormat snupkg
-```
-where type is the same as from the previous step.
+
+## License
+
+The bindings are distributed under the [MIT](LICENSE) license. The license of the native FFmpegKit/FFmpeg library itself is defined by the original project — see [ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg).

@@ -20,6 +20,7 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <AndroidApplication>True</AndroidApplication>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
+    <FFmpegKitVersion Condition=" '$(FFmpegKitVersion)' == '' ">8.1.7</FFmpegKitVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -113,35 +114,35 @@
   <!-- For each FFmpegKitBuildType set correct LibraryProjectZip -->
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Audio'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Full'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'FullGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Https'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'HttpsGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Min'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'MinGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Video'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-8.1.7.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-$(FFmpegKitVersion).aar" />
   </ItemGroup>
 
 

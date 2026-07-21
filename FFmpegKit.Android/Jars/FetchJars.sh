@@ -5,7 +5,7 @@
 # (no prebuilt binaries since v6.1.0). The .aar files below instead come from the
 # community-maintained Maven Central mirror at dev.ffmpegkit-maintained.
 
-FFMPEG_KIT_VERSION="8.1.7"
+FFMPEG_KIT_VERSION="${1:-8.1.7}"
 MAVEN_BASE="https://repo1.maven.org/maven2/dev/ffmpegkit-maintained"
 
 rm -f *.jar
