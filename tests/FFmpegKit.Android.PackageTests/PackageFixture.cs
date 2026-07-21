@@ -17,7 +17,7 @@ public static class Packages
     /// <summary>Target frameworks each package must carry a binding assembly for.</summary>
     public static readonly string[] ExpectedTargetFrameworks =
     [
-        "net8.0-android34.0", "net9.0-android35.0",
+        "net8.0-android34.0", "net9.0-android35.0", "net10.0-android36.0",
     ];
 
     public static string ArtifactsDirectory { get; } = ResolveArtifactsDirectory();

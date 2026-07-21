@@ -9,22 +9,57 @@ set -e
 #   ./BuildNugets.sh 8.1.7-beta.4    # explicit version
 #
 # Packages are written to ../artifacts.
+#
+# Each .NET SDK's Android workload supports only two target frameworks - the .NET 9 band builds
+# net8/net9, the .NET 10 band builds net9/net10 - so this runs two passes and merges them. The
+# repository's global.json pins the .NET 9 SDK, so the second pass is invoked from a scratch
+# directory carrying its own global.json, since the SDK is resolved from the working directory.
 
 cd "$(dirname "$0")"
 
 VERSION="$1"
-OUTPUT="../artifacts"
+ROOT="$(cd .. && pwd)"
+PROJECT="$ROOT/FFmpegKit.Android/FFmpegKit.Android.csproj"
+OUTPUT="$ROOT/artifacts"
+
+PASS1_BAND="net9"
+PASS2_BAND="net10"
+PASS2_SDK="10.0.100"
 
 VERSION_ARG=""
 if [ -n "$VERSION" ]; then
     VERSION_ARG="-p:Version=$VERSION"
 fi
 
+PASS1_DIR="$OUTPUT/.net9-pass"
+PASS2_DIR="$OUTPUT/.net10-pass"
+rm -rf "$PASS1_DIR" "$PASS2_DIR"
+
+SDK10_DIR="$(mktemp -d)"
+trap 'rm -rf "$SDK10_DIR"' EXIT
+cat > "$SDK10_DIR/global.json" <<EOF
+{ "sdk": { "version": "$PASS2_SDK", "rollForward": "latestFeature" } }
+EOF
+
 for build_type in Audio Full FullGpl Https HttpsGpl Min MinGpl Video; do
-    echo "==> packing $build_type"
-    dotnet pack FFmpegKit.Android.csproj \
+    echo "==> packing $build_type ($PASS1_BAND band)"
+    dotnet pack "$PROJECT" \
         -c Release \
         -p:FFmpegKitBuildType="$build_type" \
+        -p:FFmpegKitSdkBand="$PASS1_BAND" \
         $VERSION_ARG \
-        -o "$OUTPUT"
+        -o "$PASS1_DIR"
+
+    echo "==> packing $build_type ($PASS2_BAND band)"
+    (cd "$SDK10_DIR" && dotnet pack "$PROJECT" \
+        -c Release \
+        -p:FFmpegKitBuildType="$build_type" \
+        -p:FFmpegKitSdkBand="$PASS2_BAND" \
+        $VERSION_ARG \
+        -o "$PASS2_DIR")
 done
+
+echo "==> merging target frameworks"
+python3 "$ROOT/build/merge-packages.py" "$PASS1_DIR" "$PASS2_DIR" "$OUTPUT"
+
+rm -rf "$PASS1_DIR" "$PASS2_DIR"
