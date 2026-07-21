@@ -113,35 +113,35 @@
   <!-- For each FFmpegKitBuildType set correct LibraryProjectZip -->
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Audio'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-audio-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Full'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'FullGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-full-gpl-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Https'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'HttpsGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-https-gpl-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Min'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'MinGpl'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-min-gpl-8.1.7.aar" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(FFmpegKitBuildType)' == 'Video'">
-    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-5.1.LTS.aar" />
+    <LibraryProjectZip Include="Jars\ffmpeg-kit-video-8.1.7.aar" />
   </ItemGroup>
 
 
