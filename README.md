@@ -1,6 +1,12 @@
 # FFmpegKit.Android
 
+[![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android?label=nuget)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android)
+[![Bindings: MIT](https://img.shields.io/badge/bindings-MIT-blue)](LICENSE)
+[![Packages: LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/packages-LGPL--3.0%20or%20GPL--3.0-orange)](#license)
+
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
+
+> GitHub reports this repository as MIT because that is what it contains: binding source only, no native binaries. **The published packages are not MIT** — they embed native FFmpeg builds and are additionally covered by LGPL-3.0, or GPL-3.0 for the `-gpl` variants. See [License](#license).
 
 Built against the prebuilt Android binaries from **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)** — see [Where the native binaries come from](#where-the-native-binaries-come-from) for why that fork and not the original.
 
