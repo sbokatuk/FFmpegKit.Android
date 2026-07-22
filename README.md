@@ -283,7 +283,9 @@ It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` on
 
 The sample targets API 26 rather than the package's own floor of 24, because it previews results with CommunityToolkit's `MediaElement`, which requires 26. Your own app can still target 24.
 
-The app is intentionally **not** part of `FFmpegKit.sln` and not built in CI: it needs the MAUI workload, which would add several minutes to every run while proving less than the device tests already do.
+CI builds it on every pull request and release, against the package produced by that same run. It consumes the package through a `PackageReference` exactly as you would, so it is what catches an API that no longer matches the documentation here — it is only built, never deployed, since the device tests already prove the binding runs.
+
+It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.sln` does not require the MAUI workload.
 
 ## CI
 

@@ -128,6 +128,46 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  sample:
+    name: build sample app
+    needs: pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-android
+
+      - name: Set up Android SDK platforms
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35'
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts
+
+      # The sample consumes the packed package through a PackageReference exactly as a user
+      # would, so it is the only thing here that checks the API is still usable the way the
+      # README documents it. It has regressed silently twice: once when a renamed property left
+      # it referring to something that no longer existed, and once when it resolved a published
+      # package from nuget.org instead of the one just built, because its version property
+      # pointed at the wrong number. Nothing built it, so nothing noticed.
+      #
+      # Build only - the device tests already prove the binding runs.
+      - name: Build the sample against the packed package
+        run: |
+          dotnet build FFmpegKit.Android.Example/FFmpegKit.Android.Example.csproj \
+            --configuration Release \
+            -p:FFmpegKitVersion="${{ inputs.version }}"
+
   e2e:
     name: emulator smoke test
     needs: pack
