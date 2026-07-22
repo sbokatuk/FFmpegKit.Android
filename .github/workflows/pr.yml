@@ -22,11 +22,13 @@ jobs:
 
       - id: resolve
         run: |
-          # Base version lives in Directory.Build.props; the PR number and run number make each
-          # published prerelease unique, since nuget.org never allows a version to be reused.
-          base=$(grep -oPm1 '(?<=<FFmpegKitNativeVersion>)[^<]+' Directory.Build.props)
+          # FFmpegVersion, not FFmpegKitNativeVersion: package versions name the FFmpeg a build
+          # contains (8.1.2), not the fork's own release number (8.1.7). The PR number and run
+          # number make each prerelease unique, since nuget.org never allows a version to be
+          # reused.
+          base=$(grep -oPm1 '(?<=<FFmpegVersion>)[^<]+' Directory.Build.props)
           if [ -z "${base}" ]; then
-            echo "::error::could not read FFmpegKitNativeVersion from Directory.Build.props"
+            echo "::error::could not read FFmpegVersion from Directory.Build.props"
             exit 1
           fi
           version="${base}-beta.${{ github.event.number }}.${{ github.run_number }}"
