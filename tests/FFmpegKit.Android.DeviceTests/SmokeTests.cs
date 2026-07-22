@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Threading;
 using Ffmpegkit.Droid;
 // This assembly's own root namespace is 'FFmpegKit', which would otherwise shadow the bound type.
@@ -28,7 +29,121 @@ public static class SmokeTests
         new("converts java enums to managed ones", ManagedEnumConversionsWork),
         new("delivers log output to a delegate", LogDelegateReceivesOutput),
         new("cancels a running command", CancellationStopsACommand),
+        new("reports typed media information", TypedMediaInformationIsParsed),
+        new("parses media values regardless of locale", TypedValuesIgnoreAmbientCulture),
+        new("reports progress while encoding", ProgressIsReported),
+        new("reports the bundled ffmpeg version", ReportsBundledFFmpegVersion),
     ];
+
+    private static void TypedMediaInformationIsParsed(string workingDirectory)
+    {
+        var output = Path.Combine(workingDirectory, "output.mp4");
+        Assert(File.Exists(output), "The encode check must run before this one.");
+
+        var information = FFprobeKit.GetMediaInformationAsync(output).GetAwaiter().GetResult().MediaInformation;
+        Assert(information is not null, "FFprobe returned no media information.");
+
+        var duration = information!.DurationOrNull;
+        Assert(duration is not null, $"Duration '{information.Duration}' did not parse.");
+        Assert(duration!.Value > TimeSpan.Zero, $"Duration parsed as {duration}.");
+
+        Assert(information.SizeBytes is > 0, $"SizeBytes was {information.SizeBytes?.ToString() ?? "<null>"}.");
+
+        var video = information.Streams.FirstOrDefault(s => s.IsVideo);
+        Assert(video is not null, "No stream reported IsVideo.");
+
+        // The encode step scales to 64x64, so these are known values rather than merely non-null.
+        Assert(video!.PixelWidth == 64, $"PixelWidth was {video.PixelWidth?.ToString() ?? "<null>"}.");
+        Assert(video.PixelHeight == 64, $"PixelHeight was {video.PixelHeight?.ToString() ?? "<null>"}.");
+        Assert(video.AverageFrameRateFps is > 0, $"AverageFrameRateFps was {video.AverageFrameRateFps?.ToString() ?? "<null>"}.");
+
+        Report($"duration={duration} {video.PixelWidth}x{video.PixelHeight} @{video.AverageFrameRateFps:0.##}fps size={information.SizeBytes}");
+    }
+
+    private static void TypedValuesIgnoreAmbientCulture(string workingDirectory)
+    {
+        var output = Path.Combine(workingDirectory, "output.mp4");
+        Assert(File.Exists(output), "The encode check must run before this one.");
+
+        var information = FFprobeKit.GetMediaInformationAsync(output).GetAwaiter().GetResult().MediaInformation;
+        Assert(information is not null, "FFprobe returned no media information.");
+
+        var invariant = information!.DurationOrNull;
+        var previous = CultureInfo.CurrentCulture;
+
+        try
+        {
+            // The whole point of the typed accessors. Under de-DE the dot in "12.345000" reads as
+            // a group separator and double.Parse returns 12,345,000; under fr-FR it throws.
+            foreach (var culture in new[] { "de-DE", "fr-FR" })
+            {
+                CultureInfo.CurrentCulture = new CultureInfo(culture);
+
+                var parsed = information.DurationOrNull;
+                Assert(
+                    parsed == invariant,
+                    $"Duration parsed as {parsed} under {culture} but {invariant} under {previous.Name}.");
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+
+        Report($"duration stable across locales: {invariant}");
+    }
+
+    private static void ProgressIsReported(string workingDirectory)
+    {
+        var input = Path.Combine(workingDirectory, "progress.raw");
+        var output = Path.Combine(workingDirectory, "progress.mp4");
+        WriteRawFrames(input, frameCount: 600);
+        File.Delete(output);
+
+        var samples = new List<FFmpegProgress>();
+        var progress = new Progress<FFmpegProgress>(p =>
+        {
+            lock (samples) { samples.Add(p); }
+        });
+
+        // 600 frames at 30fps is 20 seconds of material, so percent is computable.
+        var total = TimeSpan.FromSeconds(600 / 30.0);
+        var session = FFmpeg.ExecuteAsync(
+            $"-y -f rawvideo -pixel_format rgb24 -video_size {FrameWidth}x{FrameHeight} " +
+            $"-framerate 30 -i \"{input}\" -c:v mpeg4 \"{output}\"",
+            progress,
+            total).GetAwaiter().GetResult();
+
+        AssertSuccess(session, "progress encode");
+
+        // Progress arrives on an FFmpegKit thread and Progress<T> posts it, so allow it to drain.
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < deadline)
+        {
+            lock (samples) { if (samples.Count > 0) break; }
+            Thread.Sleep(50);
+        }
+
+        FFmpegProgress[] captured;
+        lock (samples) { captured = samples.ToArray(); }
+
+        Assert(captured.Length > 0, "No progress was reported.");
+        Assert(captured.All(p => p.Percent is >= 0 and <= 1), "A percent fell outside 0..1.");
+        Assert(captured.Any(p => p.Position > TimeSpan.Zero), "Position never advanced.");
+
+        var last = captured[^1];
+        Report($"{captured.Length} samples, last: {last.Percent:P0} at {last.Position}, frame {last.VideoFrameNumber}, speed {last.Speed:0.##}x");
+    }
+
+    private static void ReportsBundledFFmpegVersion(string workingDirectory)
+    {
+        // Cross-checks the version the release notes extract from libavcodec.so at build time
+        // against what the library reports at runtime.
+        var version = FFmpegKitConfig.FFmpegVersion;
+
+        Assert(!string.IsNullOrWhiteSpace(version), "FFmpegKitConfig.FFmpegVersion was empty.");
+        Report($"ffmpeg={version} ffmpegkit={FFmpegKitConfig.Version} lts={FFmpegKitConfig.IsLTSBuild}");
+    }
 
     private static void AsyncExecuteCompletes(string workingDirectory)
     {

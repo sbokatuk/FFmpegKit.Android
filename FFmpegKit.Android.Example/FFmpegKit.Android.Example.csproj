@@ -30,7 +30,13 @@
       Directory.Build.props, so it tracks the repository automatically; pass
       -p:FFmpegKitVersion=8.1.7-beta.4 to try a specific build.
     -->
-    <FFmpegKitVersion Condition=" '$(FFmpegKitVersion)' == '' ">$(FFmpegKitNativeVersion)</FFmpegKitVersion>
+    <!--
+      FFmpegVersion, not FFmpegKitNativeVersion: package versions are based on the FFmpeg the
+      build contains (8.1.2), while FFmpegKitNativeVersion is the fork's own release number
+      (8.1.7). Asking for the latter resolves a published 8.1.7.x from nuget.org instead of the
+      package you just built, which fails in whichever confusing way the two happen to differ.
+    -->
+    <FFmpegKitVersion Condition=" '$(FFmpegKitVersion)' == '' ">$(FFmpegVersion)</FFmpegKitVersion>
   </PropertyGroup>
 
   <ItemGroup>

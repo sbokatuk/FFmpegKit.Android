@@ -46,6 +46,41 @@ namespace Ffmpegkit.Droid
 				cancellationToken);
 		}
 
+		/// <summary>Runs an FFmpeg command, reporting progress, and awaits its completion.</summary>
+		/// <param name="command">The FFmpeg command, as it would be typed after <c>ffmpeg</c>.</param>
+		/// <param name="progress">Receives a sample each time FFmpeg reports statistics.</param>
+		/// <param name="totalDuration">
+		/// Duration of the material being processed. Supply it to get
+		/// <see cref="FFmpegProgress.Percent"/> and an estimated time remaining; without it the
+		/// other fields are still reported. <see cref="MediaInformation.DurationOrNull"/> from an
+		/// <see cref="FFprobeKit.GetMediaInformationAsync(string)"/> call is the usual source.
+		/// </param>
+		/// <param name="cancellationToken">Cancels the running session.</param>
+		/// <remarks>
+		/// Progress is reported on an FFmpegKit worker thread, so marshal to the UI thread before
+		/// touching UI. Statistics are per session here, not the global
+		/// <see cref="FFmpegKitConfig.EnableStatisticsCallback(Action{Statistics})"/> hook, so
+		/// concurrent commands do not report into each other's handlers.
+		/// </remarks>
+		public static Task<FFmpegSession> ExecuteAsync (
+			string command,
+			IProgress<FFmpegProgress> progress,
+			TimeSpan? totalDuration = null,
+			CancellationToken cancellationToken = default)
+		{
+			if (command is null)
+				throw new ArgumentNullException (nameof (command));
+			if (progress is null)
+				throw new ArgumentNullException (nameof (progress));
+
+			var statistics = new ActionStatisticsCallback (
+				sample => progress.Report (FFmpegProgress.From (sample, totalDuration)));
+
+			return RunAsync (
+				callback => ExecuteAsync (command, callback, logCallback: null, statistics),
+				cancellationToken);
+		}
+
 		private static Task<FFmpegSession> RunAsync (
 			Func<IFFmpegSessionCompleteCallback, FFmpegSession> start,
 			CancellationToken cancellationToken)

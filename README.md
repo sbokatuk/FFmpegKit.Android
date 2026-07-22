@@ -34,26 +34,28 @@ The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Dire
 
 The fork currently publishes three lines, each with all eight variants:
 
-| FFmpegKit | ABIs | minSdk |
-| --- | --- | --- |
-| `6.0.3` | `arm64-v8a`, `x86_64` | 24 |
-| `7.1.6` | `arm64-v8a`, `x86_64` | 24 |
-| `8.1.7` | `arm64-v8a`, `x86_64` | 24 |
+| FFmpegKit | Bundled FFmpeg | ABIs | minSdk |
+| --- | --- | --- | --- |
+| `6.0.3` | `n6.1.6` | `arm64-v8a`, `x86_64` | 24 |
+| `7.1.6` | `n7.1.5` | `arm64-v8a`, `x86_64` | 24 |
+| `8.1.7` | `n8.1.2` | `arm64-v8a`, `x86_64` | 24 |
+
+**FFmpegKit's version is not FFmpeg's.** FFmpegKit `8.1.7` packages FFmpeg `n8.1.2`; the fork versions its own releases independently of the FFmpeg it pins. The bundled version above is read out of the shipped `libavcodec.so`, and every generated release note states it, because upstream's own notes mention other FFmpeg versions in passing and are easy to misread.
 
 None of them ship 32-bit binaries, so dropping back to an older line does not restore `armeabi-v7a` or `x86` support.
 
 ### Releasing an older line
 
-Package version and native version are the same number, so the tag selects both: **`v6.0.3` builds against FFmpegKit 6.0.3** and publishes `6.0.3` packages. A prerelease suffix is ignored when resolving the native version (`v7.1.6-beta.1` → native `7.1.6`), and a fourth component marks a binding-only revision (`v6.0.3.1` → native `6.0.3`). No branch or `Directory.Build.props` edit is needed.
+Tags name the FFmpeg version: **`v6.1.6.4` publishes `6.1.6.4`** and builds against the FFmpegKit release that packages FFmpeg 6.1.6, looked up in [`build/native-versions.tsv`](build/native-versions.tsv). The fourth component is the binding revision and any prerelease suffix is ignored when resolving (`v8.1.2.4-rc.1` → FFmpeg `8.1.2`). A tag naming a version that is not in the mapping fails the release with the list of known builds, so an old-style tag like `v8.1.7.4` cannot be published by mistake. No branch or `Directory.Build.props` edit is needed.
 
 Locally, pass the native version as the second argument:
 
 ```sh
-./FFmpegKit.Android/Jars/FetchJars.sh 6.0.3     # fetch that line's .aar files
-./FFmpegKit.Android/BuildNugets.sh 6.0.3 6.0.3  # package version, native version
+./FFmpegKit.Android/Jars/FetchJars.sh 6.0.3       # .aar files are named after the FFmpegKit release
+./FFmpegKit.Android/BuildNugets.sh 6.1.6.4 6.0.3  # package version, FFmpegKit release
 ```
 
-NuGet orders `8.1.7` above `6.0.3`, so publishing an older line later does not change what `dotnet add package` resolves by default.
+NuGet orders `8.1.2` above `6.1.6`, so publishing an older line later does not change what `dotnet add package` resolves by default.
 
 `FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
 
@@ -100,13 +102,17 @@ Install the package via NuGet. There are various packages depending on what you 
 
 Three FFmpegKit lines are published in parallel, so you can pin to the FFmpeg generation your commands are validated against. All three are built from the same bindings and carry the same target frameworks, ABIs and licensing — only the native FFmpeg build differs. The badges above show the newest version overall, which is always the 8.x one.
 
-| Track | FFmpegKit | Install |
-| --- | --- | --- |
-| **`8.*`** (recommended) | 8.1.7 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
-| `7.*` | 7.1.6 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
-| `6.*` | 6.0.3 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
+| Track | FFmpeg | From FFmpegKit | Install |
+| --- | --- | --- | --- |
+| **`8.*`** (recommended) | `n8.1.2` | 8.1.7 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
+| `7.*` | `n7.1.5` | 7.1.6 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
+| `6.*` | `n6.1.6` | 6.0.3 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
 
-A package version is its FFmpegKit version plus a binding revision — `8.1.7.1` is FFmpegKit `8.1.7`, binding revision `1`. A floating range therefore always resolves to the newest bindings for that FFmpeg line and never crosses into another one, which is what makes `8.*` safe to leave in a project file. Pin an exact version instead if you would rather approve every binding update yourself.
+A package version is **`<FFmpeg version>.<binding revision>`** — `8.1.2.4` is FFmpeg `8.1.2`, binding revision `4`. It deliberately names FFmpeg rather than FFmpegKit, because FFmpegKit's own release numbers do not track FFmpeg: FFmpegKit `8.1.7` packages FFmpeg `n8.1.2`. [`build/native-versions.tsv`](build/native-versions.tsv) maps between the two and is what the release workflow uses to turn a tag into the `.aar` to download.
+
+A floating range therefore always resolves to the newest bindings for that FFmpeg line and never crosses into another one, which is what makes `8.*` safe to leave in a project file. Pin an exact version instead if you would rather approve every binding update yourself.
+
+> Versions up to `8.1.7.3`, `7.1.6.3` and `6.0.3.3` used the older FFmpegKit-based numbering and are unlisted. `8.1.2.4` is not a downgrade from `8.1.7.3` — it is the same build, renamed to state the FFmpeg it contains.
 
 Substitute any variant from the table above for `Video`. Every track ships `arm64-v8a` and `x86_64` at `minSdkVersion` 24, so choosing an older one is not a way to regain 32-bit support — see [Where the native binaries come from](#where-the-native-binaries-come-from).
 
@@ -141,6 +147,70 @@ FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 ```
 
 More examples and usage can be found in the [original FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android). That repository is archived, but the Java API it documents is the one these bindings expose, so it remains the reference.
+
+### Beyond the generated binding
+
+The binding is a faithful projection of FFmpegKit's Java API, which is not always what you want from C#. These packages add a thin layer on top of it, in the `Ffmpegkit.Droid` namespace alongside everything else.
+
+**Await a command instead of blocking.** `FFmpegKit.Execute` blocks for the length of the transcode, which on the UI thread means a frozen app:
+
+```c#
+var session = await FFmpegKit.ExecuteAsync("-i in.mov -c:v mpeg4 out.mp4", cancellationToken);
+if (session.Succeeded()) { /* ... */ }
+```
+
+A failing command completes normally with a non-success `ReturnCode` rather than throwing, matching FFmpeg's own semantics. Cancelling asks FFmpeg to stop and the session completes with a cancelled code — a partial output file may exist.
+
+**Report progress.** Supply the source duration and you get a percentage and an estimate:
+
+```c#
+var duration = (await FFprobeKit.GetMediaInformationAsync(input)).MediaInformation?.DurationOrNull;
+
+await FFmpegKit.ExecuteAsync(command, new Progress<FFmpegProgress>(p =>
+{
+    ProgressBar.Progress = p.Percent ?? 0;   // null when no duration was supplied
+}), duration);
+```
+
+Progress arrives on an FFmpegKit worker thread; `Progress<T>` marshals it back to the thread that created it.
+
+**Read media information without parsing strings.** FFprobe reports numbers as invariant-format strings and sizes as boxed Java `Long`s. Parsing them yourself is a live bug: `double.Parse("12.345000")` returns **12,345,000** under a German locale and throws under a French one. The typed accessors parse invariantly and return `null` rather than throwing when a field is absent:
+
+```c#
+info.DurationOrNull      // TimeSpan?      (vs. Duration, a string)
+info.BitrateBps          // long?
+info.SizeBytes           // long?
+info.TagValues           // IReadOnlyDictionary<string, string>  (vs. Tags, a Java JSONObject)
+
+stream.PixelWidth        // int?           (vs. Width, a Java.Lang.Long)
+stream.AverageFrameRateFps  // double?     evaluates "30000/1001"
+stream.IsVideo / IsAudio
+```
+
+**Pass a lambda where an interface is expected**, for the log and statistics hooks:
+
+```c#
+FFmpegKitConfig.EnableLogCallback(log => Debug.WriteLine(log.Message));
+```
+
+**Use managed enums.** `SessionState` and `Level` are Java enums, so they cannot be used in a `switch`, and comparing them with `==` compares managed peer references rather than the underlying constants. `ToManaged()` converts at the boundary.
+
+### Working with user-picked files
+
+On Android 10 and later a file the user picks arrives as a `content://` URI, and FFmpeg cannot open one. Register it first:
+
+```c#
+var input = FFmpegKitConfig.GetSafParameterForRead(pickedUri);
+await FFmpegKit.ExecuteAsync($"-i {input} -c:v mpeg4 \"{output}\"");
+```
+
+The returned value is a complete argument — do not wrap it in quotes. `GetSafParameterForWrite` does the same for output, but the document has to exist already, so create it with `ACTION_CREATE_DOCUMENT` first. Registrations last for the life of the process, so obtain them per operation rather than for every item in a long list.
+
+MAUI's `FilePicker` copies the picked file into the cache and hands back a real path, so it needs none of this; SAF matters when you hold the raw URI, such as from a share intent or the photo picker.
+
+### Session history
+
+FFmpegKit keeps every session in memory, each holding its full log output, up to `FFmpegKitConfig.SessionHistorySize`. An app running many conversions will accumulate them with no obvious cause. Call `FFmpegKitConfig.ClearSessions()` when you are done with a batch, or lower the history size.
 
 
 ## Building
@@ -236,7 +306,7 @@ Setup on nuget.org (**Account → Trusted Publishing**): a policy binds to exact
 | Repository Owner | `sbokatuk` |
 | Repository | `FFmpegKit.Android` — the name only, not a URL |
 | Workflow File | `pr.yml` for one policy, `release.yml` for the other |
-| Environment | `production` — must match `environment:` on the publish job |
+| Environment | `nuget.org` — must match `environment:` on the publish job exactly |
 
 No repository secrets are required. The workflows pass the nuget.org **profile name** (`s.bokatuk`, not an email address) to `NuGet/login`, defaulted inline since it is already public as the package author. Set a `NUGET_USER` secret to override it if the owner ever changes.
 

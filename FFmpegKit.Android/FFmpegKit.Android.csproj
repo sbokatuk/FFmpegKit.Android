@@ -107,7 +107,7 @@
     <IsPackable>true</IsPackable>
     <PackageId>FFmpegKit.Net.$(FFmpegKitBuildType).Android</PackageId>
     <Title>.NET for Android bindings for the native FFmpegKit $(FFmpegKitBuildType) SDK.</Title>
-    <Description>.NET for Android / .NET MAUI bindings for the native FFmpegKit $(FFmpegKitBuildType) SDK. Built against FFmpegKit $(FFmpegKitNativeVersion). The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
+    <Description>.NET for Android / .NET MAUI bindings for the native FFmpegKit $(FFmpegKitBuildType) SDK. Contains FFmpeg $(FFmpegVersion), from FFmpegKit release $(FFmpegKitNativeVersion). The bundled native FFmpeg binaries are licensed under $(FFmpegKitNativeLicense); the binding code is MIT. See the licence files in this package before shipping.</Description>
     <PackageLicenseExpression>MIT AND $(FFmpegKitNativeLicense)</PackageLicenseExpression>
     <PackageTags>ffmpeg;ffmpegkit;$(FFmpegKitAarName);video;audio;transcode;SDK;MAUI;Android;dotnet-android;Binding</PackageTags>
     <PackageIcon>icon.png</PackageIcon>

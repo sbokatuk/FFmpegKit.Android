@@ -18,6 +18,7 @@ jobs:
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       native-version: ${{ steps.resolve.outputs.native-version }}
+      ffmpeg-version: ${{ steps.resolve.outputs.ffmpeg-version }}
       prerelease: ${{ steps.resolve.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
@@ -30,12 +31,21 @@ jobs:
             exit 1
           fi
 
-          # The tag drives which native FFmpegKit version is bound, so an older LTS line is
-          # released simply by tagging it - v6.0.3 builds against FFmpegKit 6.0.3. Any prerelease
-          # suffix is dropped, and a fourth version component is treated as a binding-only
-          # revision: v6.0.3.1 still binds native 6.0.3.
-          native=$(printf '%s' "${version%%-*}" | cut -d. -f1-3)
-          echo "native-version=${native}" >> "$GITHUB_OUTPUT"
+          # Tags name the FFmpeg version, not FFmpegKit's: v8.1.2.4 is FFmpeg 8.1.2, binding
+          # revision 4. The fourth component and any prerelease suffix are dropped to get the
+          # FFmpeg version, which is then mapped to the FFmpegKit release that packages it -
+          # FFmpeg 8.1.2 comes from FFmpegKit 8.1.7, and the .aar is named after the latter.
+          ffmpeg_version=$(printf '%s' "${version%%-*}" | cut -d. -f1-3)
+
+          if ! resolved=$(./build/resolve-versions.sh --ffmpeg "${ffmpeg_version}" 2>&1); then
+            echo "::error::${resolved}"
+            exit 1
+          fi
+          eval "${resolved}"
+
+          echo "native-version=${ffmpegkit}" >> "$GITHUB_OUTPUT"
+          echo "ffmpeg-version=${ffmpeg}" >> "$GITHUB_OUTPUT"
+          echo "FFmpeg ${ffmpeg} (FFmpegKit ${ffmpegkit})" >> "$GITHUB_STEP_SUMMARY"
 
           case "${version}" in
             *-*) prerelease=true ;;
@@ -59,7 +69,7 @@ jobs:
     needs: [version, build]
     runs-on: ubuntu-latest
     # Must match the Environment on the nuget.org trusted publishing policy for this workflow.
-    environment: production
+    environment: nuget.org
     permissions:
       # contents: write creates the GitHub release; id-token: write lets the job request the OIDC
       # token that nuget.org exchanges for a short-lived API key. Without the latter the token
@@ -103,6 +113,9 @@ jobs:
             --skip-duplicate
 
       - name: Compose release notes
+        env:
+          # Lets the upstream release lookup use the authenticated rate limit.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # Resolved from the tag, not Directory.Build.props, so a release of an older LTS line
           # reports the version it actually bound rather than whatever the branch defaults to.
@@ -138,9 +151,14 @@ jobs:
               echo
             fi
 
+            # Describes the FFmpegKit build underneath, including the FFmpeg version it actually
+            # packages. Best-effort: never fails the release.
+            ./.github/scripts/native-build-info.sh "${native}" artifacts || true
+            echo
+
             echo "## Packages"
             echo
-            echo "Bound against FFmpegKit \`${native}\`, targeting \`net8.0-android34.0\`, \`net9.0-android35.0\` and \`net10.0-android36.0\`."
+            echo "Targeting \`net8.0-android34.0\`, \`net9.0-android35.0\` and \`net10.0-android36.0\`."
             echo
             echo "| Package | License | NuGet |"
             echo "| --- | --- | --- |"
