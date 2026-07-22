@@ -148,6 +148,70 @@ FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 
 More examples and usage can be found in the [original FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android). That repository is archived, but the Java API it documents is the one these bindings expose, so it remains the reference.
 
+### Beyond the generated binding
+
+The binding is a faithful projection of FFmpegKit's Java API, which is not always what you want from C#. These packages add a thin layer on top of it, in the `Ffmpegkit.Droid` namespace alongside everything else.
+
+**Await a command instead of blocking.** `FFmpegKit.Execute` blocks for the length of the transcode, which on the UI thread means a frozen app:
+
+```c#
+var session = await FFmpegKit.ExecuteAsync("-i in.mov -c:v mpeg4 out.mp4", cancellationToken);
+if (session.Succeeded()) { /* ... */ }
+```
+
+A failing command completes normally with a non-success `ReturnCode` rather than throwing, matching FFmpeg's own semantics. Cancelling asks FFmpeg to stop and the session completes with a cancelled code — a partial output file may exist.
+
+**Report progress.** Supply the source duration and you get a percentage and an estimate:
+
+```c#
+var duration = (await FFprobeKit.GetMediaInformationAsync(input)).MediaInformation?.DurationOrNull;
+
+await FFmpegKit.ExecuteAsync(command, new Progress<FFmpegProgress>(p =>
+{
+    ProgressBar.Progress = p.Percent ?? 0;   // null when no duration was supplied
+}), duration);
+```
+
+Progress arrives on an FFmpegKit worker thread; `Progress<T>` marshals it back to the thread that created it.
+
+**Read media information without parsing strings.** FFprobe reports numbers as invariant-format strings and sizes as boxed Java `Long`s. Parsing them yourself is a live bug: `double.Parse("12.345000")` returns **12,345,000** under a German locale and throws under a French one. The typed accessors parse invariantly and return `null` rather than throwing when a field is absent:
+
+```c#
+info.DurationOrNull      // TimeSpan?      (vs. Duration, a string)
+info.BitrateBps          // long?
+info.SizeBytes           // long?
+info.TagValues           // IReadOnlyDictionary<string, string>  (vs. Tags, a Java JSONObject)
+
+stream.PixelWidth        // int?           (vs. Width, a Java.Lang.Long)
+stream.AverageFrameRateFps  // double?     evaluates "30000/1001"
+stream.IsVideo / IsAudio
+```
+
+**Pass a lambda where an interface is expected**, for the log and statistics hooks:
+
+```c#
+FFmpegKitConfig.EnableLogCallback(log => Debug.WriteLine(log.Message));
+```
+
+**Use managed enums.** `SessionState` and `Level` are Java enums, so they cannot be used in a `switch`, and comparing them with `==` compares managed peer references rather than the underlying constants. `ToManaged()` converts at the boundary.
+
+### Working with user-picked files
+
+On Android 10 and later a file the user picks arrives as a `content://` URI, and FFmpeg cannot open one. Register it first:
+
+```c#
+var input = FFmpegKitConfig.GetSafParameterForRead(pickedUri);
+await FFmpegKit.ExecuteAsync($"-i {input} -c:v mpeg4 \"{output}\"");
+```
+
+The returned value is a complete argument — do not wrap it in quotes. `GetSafParameterForWrite` does the same for output, but the document has to exist already, so create it with `ACTION_CREATE_DOCUMENT` first. Registrations last for the life of the process, so obtain them per operation rather than for every item in a long list.
+
+MAUI's `FilePicker` copies the picked file into the cache and hands back a real path, so it needs none of this; SAF matters when you hold the raw URI, such as from a share intent or the photo picker.
+
+### Session history
+
+FFmpegKit keeps every session in memory, each holding its full log output, up to `FFmpegKitConfig.SessionHistorySize`. An app running many conversions will accumulate them with no obvious cause. Call `FFmpegKitConfig.ClearSessions()` when you are done with a batch, or lower the history size.
+
 
 ## Building
 

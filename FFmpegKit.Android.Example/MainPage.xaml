@@ -32,6 +32,16 @@
                 IsRunning="False"
                 IsVisible="False" />
 
+            <ProgressBar
+                x:Name="ConversionProgress"
+                Progress="0"
+                IsVisible="False" />
+
+            <Label
+                x:Name="ProgressLabel"
+                IsVisible="False"
+                FontSize="12" />
+
             <Label
                 x:Name="StatusLabel"
                 Text="Tap the button to run an FFmpeg conversion."

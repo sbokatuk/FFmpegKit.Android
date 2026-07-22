@@ -23,6 +23,7 @@ public partial class MainPage : ContentPage
 	];
 
 	string? _inputPath;
+	TimeSpan? _sourceDuration;
 
 	public MainPage()
 	{
@@ -48,6 +49,16 @@ public partial class MainPage : ContentPage
 
 		_inputPath = inputPath;
 		BeforePlayer.Source = MediaSource.FromFile(inputPath);
+
+		// Typed accessor: MediaInformation.Duration is the raw FFprobe string, and parsing it
+		// with the ambient culture is a silent bug on a comma-decimal locale.
+		var probe = await FFprobeKit.GetMediaInformationAsync(inputPath);
+		_sourceDuration = probe.MediaInformation?.DurationOrNull;
+
+		var video = probe.MediaInformation?.Streams?.FirstOrDefault(s => s.IsVideo);
+		StatusLabel.Text = video is null
+			? "Tap the button to run an FFmpeg conversion."
+			: $"Source: {video.PixelWidth}x{video.PixelHeight}, {_sourceDuration?.TotalSeconds:0.##}s, {video.Codec}.";
 	}
 
 	async void OnConvertClicked(object sender, EventArgs e)
@@ -61,6 +72,10 @@ public partial class MainPage : ContentPage
 		ConvertBtn.IsEnabled = false;
 		Spinner.IsVisible = true;
 		Spinner.IsRunning = true;
+		ConversionProgress.Progress = 0;
+		ConversionProgress.IsVisible = true;
+		ProgressLabel.IsVisible = true;
+		ProgressLabel.Text = "Starting...";
 		StatusLabel.Text = "Converting...";
 
 		AfterPlayer.Stop();
@@ -68,7 +83,17 @@ public partial class MainPage : ContentPage
 
 		try
 		{
-			var (success, message, outputPath) = await RunConversionAsync(option, inputPath);
+			// Progress<T> marshals back to the thread that created it - the UI thread here -
+			// so the handler can touch controls directly.
+			var progress = new Progress<FFmpegProgress>(p =>
+			{
+				ConversionProgress.Progress = p.Percent ?? 0;
+				ProgressLabel.Text = p.Percent is { } percent
+					? $"{percent:P0} · {p.Position:mm\\:ss} · {p.Speed:0.#}x"
+					: $"{p.Position:mm\\:ss} · {p.Speed:0.#}x";
+			});
+
+			var (success, message, outputPath) = await RunConversionAsync(option, inputPath, progress, _sourceDuration);
 			StatusLabel.Text = message;
 			SemanticScreenReader.Announce(message);
 
@@ -83,11 +108,17 @@ public partial class MainPage : ContentPage
 		{
 			Spinner.IsRunning = false;
 			Spinner.IsVisible = false;
+			ConversionProgress.IsVisible = false;
+			ProgressLabel.IsVisible = false;
 			ConvertBtn.IsEnabled = true;
 		}
 	}
 
-	static async Task<(bool Success, string Message, string OutputPath)> RunConversionAsync(ConversionOption option, string inputPath)
+	static async Task<(bool Success, string Message, string OutputPath)> RunConversionAsync(
+		ConversionOption option,
+		string inputPath,
+		IProgress<FFmpegProgress> progress,
+		TimeSpan? sourceDuration)
 	{
 		var outputPath = Path.Combine(FileSystem.CacheDirectory, option.OutputFileName);
 
@@ -98,7 +129,8 @@ public partial class MainPage : ContentPage
 
 		// Awaited directly: no Task.Run, because ExecuteAsync hands the work to FFmpegKit's own
 		// executor rather than blocking a thread pool thread for the length of the transcode.
-		var session = await FFmpeg.ExecuteAsync(command);
+		// The duration is what lets FFmpegKit report a percentage rather than just a position.
+		var session = await FFmpeg.ExecuteAsync(command, progress, sourceDuration);
 
 		if (session.Succeeded())
 		{
