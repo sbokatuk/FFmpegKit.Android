@@ -61,7 +61,7 @@ public static class Packages
         Assert.True(
             matches.Length > 0,
             $"No {id}*{extension} found in '{ArtifactsDirectory}'. " +
-            "Run FFmpegKit.Android/BuildNugets.sh (or the CI pack step) first.");
+            "Run src/FFmpegKit.Android/BuildNugets.sh (or the CI pack step) first.");
 
         // A rebuilt working copy can leave several versions behind; test the newest.
         return matches.OrderByDescending(File.GetLastWriteTimeUtc).First();

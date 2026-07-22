@@ -15,7 +15,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-ROOT="$(cd ../.. && pwd)"
+ROOT="$(cd ../../.. && pwd)"
 PROPS="$ROOT/Directory.Build.props"
 MAVEN_BASE="https://repo1.maven.org/maven2/dev/ffmpegkit-maintained"
 SMART_EXCEPTION_VERSION="0.2.1"
@@ -43,16 +43,27 @@ esac
 
 echo "==> fetching FFmpegKit $FFMPEG_KIT_VERSION"
 
-rm -f ./*.jar
-rm -f ./*.aar
+# Downloaded into a staging directory and moved into place only once every file has arrived.
+# Deleting first and downloading second leaves the working copy with no binaries at all when a
+# version turns out not to exist, which costs a 200 MB re-download to recover from.
+STAGING=$(mktemp -d)
+trap 'rm -rf "$STAGING"' EXIT
 
 # FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions, which
 # is not bundled in the .aar and is not declared in its .pom. Without these two jars every
 # FFmpeg call fails at runtime with NoClassDefFoundError.
 for artifact in common java; do
-    curl -fL -O "https://github.com/tanersener/smart-exception/releases/download/v$SMART_EXCEPTION_VERSION/smart-exception-$artifact-$SMART_EXCEPTION_VERSION.jar"
+    curl -fL --output-dir "$STAGING" -O \
+        "https://github.com/tanersener/smart-exception/releases/download/v$SMART_EXCEPTION_VERSION/smart-exception-$artifact-$SMART_EXCEPTION_VERSION.jar"
 done
 
 for variant in audio full full-gpl https https-gpl min min-gpl video; do
-    curl -fL -O "$MAVEN_BASE/ffmpeg-kit-$variant/$FFMPEG_KIT_VERSION/ffmpeg-kit-$variant-$FFMPEG_KIT_VERSION.aar"
+    curl -fL --output-dir "$STAGING" -O \
+        "$MAVEN_BASE/ffmpeg-kit-$variant/$FFMPEG_KIT_VERSION/ffmpeg-kit-$variant-$FFMPEG_KIT_VERSION.aar"
 done
+
+rm -f ./*.jar
+rm -f ./*.aar
+mv "$STAGING"/*.jar "$STAGING"/*.aar .
+
+echo "==> fetched $(ls ./*.aar | wc -l | tr -d ' ') .aar and $(ls ./*.jar | wc -l | tr -d ' ') .jar files"
