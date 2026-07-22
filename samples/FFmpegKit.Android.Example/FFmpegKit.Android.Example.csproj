@@ -56,7 +56,7 @@
 
     <!--
       The locally built package, resolved from ./artifacts via the local-artifacts source in the
-      repository's NuGet.config. Run FFmpegKit.Android/BuildNugets.sh first - this deliberately
+      repository's NuGet.config. Run src/FFmpegKit.Android/BuildNugets.sh first - this deliberately
       does not come from nuget.org, so the example exercises what you just built.
       Full is the LGPL variant; the -gpl ones would make this sample GPL-3.0.
     -->

@@ -23,8 +23,8 @@ cd "$(dirname "$0")"
 
 VERSION="$1"
 NATIVE_VERSION="$2"
-ROOT="$(cd .. && pwd)"
-PROJECT="$ROOT/FFmpegKit.Android/FFmpegKit.Android.csproj"
+ROOT="$(cd ../.. && pwd)"
+PROJECT="$ROOT/src/FFmpegKit.Android/FFmpegKit.Android.csproj"
 OUTPUT="$ROOT/artifacts"
 
 PASS1_BAND="net9"

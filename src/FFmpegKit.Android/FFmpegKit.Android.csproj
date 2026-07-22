@@ -73,8 +73,8 @@
     <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' == 'true' ">GPL-3.0-only</FFmpegKitNativeLicense>
     <FFmpegKitNativeLicense Condition=" '$(FFmpegKitIsGpl)' != 'true' ">LGPL-3.0-only</FFmpegKitNativeLicense>
 
-    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' == 'true' ">../licenses/GPL-3.0.txt</FFmpegKitNativeLicenseFile>
-    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' != 'true' ">../licenses/LGPL-3.0.txt</FFmpegKitNativeLicenseFile>
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' == 'true' ">../../licenses/GPL-3.0.txt</FFmpegKitNativeLicenseFile>
+    <FFmpegKitNativeLicenseFile Condition=" '$(FFmpegKitIsGpl)' != 'true' ">../../licenses/LGPL-3.0.txt</FFmpegKitNativeLicenseFile>
   </PropertyGroup>
 
   <!--
@@ -117,8 +117,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../Nugets/icon.png" Pack="true" PackagePath="/" Visible="false" />
-    <None Include="../README.md" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="icon.png" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" Visible="false" />
 
     <!--
       Ship both licence texts the package is covered by. Distributing LGPL/GPL binaries means
@@ -126,7 +126,7 @@
       Packed into a folder so each file keeps its own name - naming the target explicitly would
       make NuGet treat the extensionless LICENSE as a directory.
     -->
-    <None Include="../LICENSE" Pack="true" PackagePath="licenses/" Visible="false" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="licenses/" Visible="false" />
     <None Include="$(FFmpegKitNativeLicenseFile)" Pack="true" PackagePath="licenses/" Visible="false" />
   </ItemGroup>
 

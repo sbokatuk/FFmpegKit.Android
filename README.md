@@ -16,7 +16,7 @@ This repository contains .NET bindings (`AndroidClassParser=class-parse`) on top
 
 Packages target `net8.0-android34.0`, `net9.0-android35.0` and `net10.0-android36.0`.
 
-Each .NET SDK's Android workload supports only two target frameworks — the .NET 9 band ships `Microsoft.Android.Sdk.net8` and `.net9`, the .NET 10 band ships `.net9` and `.net10` — so no single `dotnet pack` can produce all three. [`BuildNugets.sh`](FFmpegKit.Android/BuildNugets.sh) packs once per band and [`build/merge-packages.py`](build/merge-packages.py) merges the `lib/` trees and nuspec dependency groups into one package per variant.
+Each .NET SDK's Android workload supports only two target frameworks — the .NET 9 band ships `Microsoft.Android.Sdk.net8` and `.net9`, the .NET 10 band ships `.net9` and `.net10` — so no single `dotnet pack` can produce all three. [`BuildNugets.sh`](src/FFmpegKit.Android/BuildNugets.sh) packs once per band and [`build/merge-packages.py`](build/merge-packages.py) merges the `lib/` trees and nuspec dependency groups into one package per variant.
 
 ### Where the native binaries come from
 
@@ -28,7 +28,7 @@ FFmpegKit has three relevant repositories, and only one of them still ships usab
 | [`arthenica/ffmpeg-kit-next`](https://github.com/arthenica/ffmpeg-kit-next) | active, the official continuation | none — releases up to `v8.1.0` carry source only, zero binary assets |
 | [`ffmpegkit-maintained/ffmpeg`](https://github.com/ffmpegkit-maintained/ffmpeg) | active community fork | **yes** — published to Maven Central as `dev.ffmpegkit-maintained`, currently `8.1.7` |
 
-So the `.aar` files come from the community fork, via Maven Central — see [`FetchJars.sh`](FFmpegKit.Android/Jars/FetchJars.sh). It keeps the original `com.arthenica.ffmpegkit` Java API, so the binding and its `Ffmpegkit.Droid` namespace are unaffected by the switch. Should `ffmpeg-kit-next` start publishing binaries, moving over would be a change to `FetchJars.sh` and `FFmpegKitNativeVersion` only.
+So the `.aar` files come from the community fork, via Maven Central — see [`FetchJars.sh`](src/FFmpegKit.Android/Jars/FetchJars.sh). It keeps the original `com.arthenica.ffmpegkit` Java API, so the binding and its `Ffmpegkit.Droid` namespace are unaffected by the switch. Should `ffmpeg-kit-next` start publishing binaries, moving over would be a change to `FetchJars.sh` and `FFmpegKitNativeVersion` only.
 
 The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
@@ -51,8 +51,8 @@ Tags name the FFmpeg version: **`v6.1.6.4` publishes `6.1.6.4`** and builds agai
 Locally, pass the native version as the second argument:
 
 ```sh
-./FFmpegKit.Android/Jars/FetchJars.sh 6.0.3       # .aar files are named after the FFmpegKit release
-./FFmpegKit.Android/BuildNugets.sh 6.1.6.4 6.0.3  # package version, FFmpegKit release
+./src/FFmpegKit.Android/Jars/FetchJars.sh 6.0.3       # .aar files are named after the FFmpegKit release
+./src/FFmpegKit.Android/BuildNugets.sh 6.1.6.4 6.0.3  # package version, FFmpegKit release
 ```
 
 NuGet orders `8.1.2` above `6.1.6`, so publishing an older line later does not change what `dotnet add package` resolves by default.
@@ -232,9 +232,9 @@ Python 3 is also needed, for the package merge step.
 ### All variants
 
 ```sh
-./FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
-./FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
-./FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit package version
+./src/FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
+./src/FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
+./src/FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit package version
 ```
 
 `FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
@@ -243,7 +243,7 @@ Python 3 is also needed, for the package merge step.
 
 ```sh
 # net8 + net9 assets (.NET 9 SDK, per global.json)
-dotnet pack FFmpegKit.Android/FFmpegKit.Android.csproj \
+dotnet pack src/FFmpegKit.Android/FFmpegKit.Android.csproj \
     -c Release -p:FFmpegKitBuildType=Video -p:FFmpegKitSdkBand=net9 -o artifacts
 ```
 
@@ -270,11 +270,11 @@ Arguments are the variant, the package version in `./artifacts`, and which of th
 
 ## Example app
 
-[`FFmpegKit.Android.Example`](FFmpegKit.Android.Example) is a small .NET MAUI app that runs real conversions against the package you just built — resize, grayscale and audio extraction — with a before/after video preview.
+[`FFmpegKit.Android.Example`](samples/FFmpegKit.Android.Example) is a small .NET MAUI app that runs real conversions against the package you just built — resize, grayscale and audio extraction — with a before/after video preview.
 
 ```sh
-./FFmpegKit.Android/BuildNugets.sh                    # produce ./artifacts first
-dotnet build FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
+./src/FFmpegKit.Android/BuildNugets.sh                    # produce ./artifacts first
+dotnet build samples/FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
 ```
 
 It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.

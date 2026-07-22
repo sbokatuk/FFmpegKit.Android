@@ -94,17 +94,17 @@ jobs:
         id: jars
         uses: actions/cache@v4
         with:
-          path: FFmpegKit.Android/Jars
+          path: src/FFmpegKit.Android/Jars
           # The native version is part of the key: without it a build for an older LTS line would
           # restore the previous version's .aar files and fail on the ones it actually needs.
-          key: ffmpegkit-jars-${{ steps.native.outputs.version }}-${{ hashFiles('FFmpegKit.Android/Jars/FetchJars.sh') }}
+          key: ffmpegkit-jars-${{ steps.native.outputs.version }}-${{ hashFiles('src/FFmpegKit.Android/Jars/FetchJars.sh') }}
 
       - name: Fetch FFmpegKit binaries
         if: steps.jars.outputs.cache-hit != 'true'
-        run: ./FFmpegKit.Android/Jars/FetchJars.sh "${{ steps.native.outputs.version }}"
+        run: ./src/FFmpegKit.Android/Jars/FetchJars.sh "${{ steps.native.outputs.version }}"
 
       - name: Pack all variants
-        run: ./FFmpegKit.Android/BuildNugets.sh "${{ inputs.version }}" "${{ steps.native.outputs.version }}"
+        run: ./src/FFmpegKit.Android/BuildNugets.sh "${{ inputs.version }}" "${{ steps.native.outputs.version }}"
 
       - name: Validate packages
         run: dotnet test tests/FFmpegKit.Android.PackageTests --logger 'trx;LogFileName=package-tests.trx'
@@ -164,7 +164,7 @@ jobs:
       # Build only - the device tests already prove the binding runs.
       - name: Build the sample against the packed package
         run: |
-          dotnet build FFmpegKit.Android.Example/FFmpegKit.Android.Example.csproj \
+          dotnet build samples/FFmpegKit.Android.Example/FFmpegKit.Android.Example.csproj \
             --configuration Release \
             -p:FFmpegKitVersion="${{ inputs.version }}"
 
