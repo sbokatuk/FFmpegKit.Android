@@ -51,7 +51,11 @@ if [ -n "$NATIVE_VERSION" ]; then
             exit 1
             ;;
     esac
-    NATIVE_ARG="-p:FFmpegKitNativeVersion=$NATIVE_VERSION"
+
+    # The FFmpeg version travels with it so the package description can state what it contains,
+    # rather than only the FFmpegKit release number, which is a different scheme entirely.
+    eval "$("$ROOT/build/resolve-versions.sh" --ffmpegkit "$NATIVE_VERSION")"
+    NATIVE_ARG="-p:FFmpegKitNativeVersion=$ffmpegkit -p:FFmpegVersion=$ffmpeg"
 fi
 
 PASS1_DIR="$OUTPUT/.net9-pass"
