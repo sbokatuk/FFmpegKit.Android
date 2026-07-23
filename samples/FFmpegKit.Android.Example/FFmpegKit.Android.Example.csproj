@@ -26,11 +26,10 @@
     <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
 
     <!--
-      Which build of the FFmpegKit package to demo. Defaults to FFmpegKitNativeVersion from
+      Which build of the FFmpegKit package to demo. Defaults to FFmpegVersion from
       Directory.Build.props, so it tracks the repository automatically; pass
-      -p:FFmpegKitVersion=8.1.7-beta.4 to try a specific build.
-    -->
-    <!--
+      -p:FFmpegKitVersion=8.1.2.4-beta.4 to try a specific build.
+
       FFmpegVersion, not FFmpegKitNativeVersion: package versions are based on the FFmpeg the
       build contains (8.1.2), while FFmpegKitNativeVersion is the fork's own release number
       (8.1.7). Asking for the latter resolves a published 8.1.7.x from nuget.org instead of the
