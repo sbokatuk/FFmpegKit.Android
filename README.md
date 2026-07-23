@@ -126,7 +126,7 @@ These packages replace the `Xamarin.FFmpegKit.*.Android` ones, which are no long
 
 ```diff
 -<PackageReference Include="Xamarin.FFmpegKit.Video.Android" Version="4.5.1" />
-+<PackageReference Include="FFmpegKit.Net.Video.Android" Version="8.1.7" />
++<PackageReference Include="FFmpegKit.Net.Video.Android" Version="8.1.2.4" />
 ```
 
 **The `Ffmpegkit.Droid` namespace is unchanged**, so your `using` directives and calls stay as they are. It deliberately does not follow the package name: a namespace rooted at `FFmpegKit` containing a type also called `FFmpegKit` makes `FFmpegKit.Execute(...)` resolve the namespace instead of the class and fail to compile.
@@ -236,7 +236,7 @@ Python 3 is also needed, for the package merge step.
 ```sh
 ./src/FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
 ./src/FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
-./src/FFmpegKit.Android/BuildNugets.sh 8.1.7-rc.1  # ...or with an explicit package version
+./src/FFmpegKit.Android/BuildNugets.sh 8.1.2.4-rc.1  # ...or with an explicit package version
 ```
 
 `FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
@@ -265,7 +265,7 @@ FFMPEGKIT_VARIANTS=Video dotnet test tests/FFmpegKit.Android.PackageTests  # onl
 ```sh
 # builds, installs, runs and reports - the same script CI uses
 FFMPEGKIT_DEVICE_RID=android-arm64 \
-    ./.github/scripts/run-device-tests.sh Video 8.1.7 net10.0-android36.0
+    ./.github/scripts/run-device-tests.sh Video 8.1.2.4 net10.0-android36.0
 ```
 
 Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
@@ -279,7 +279,7 @@ Arguments are the variant, the package version in `./artifacts`, and which of th
 dotnet build samples/FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
 ```
 
-It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegKitNativeVersion`; pass `-p:FFmpegKitVersion=8.1.7-rc.1` to point it at a specific build.
+It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegVersion`; pass `-p:FFmpegKitVersion=8.1.2.4-rc.1` to point it at a specific build.
 
 It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
 
@@ -293,7 +293,7 @@ It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.s
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke test, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
+| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke tests (net8 and net10 legs in parallel), then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
 | [`release.yml`](.github/workflows/release.yml) | tag `v*` | Same build and tests at the tag's version, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
 
 Both call the reusable [`build.yml`](.github/workflows/build.yml).

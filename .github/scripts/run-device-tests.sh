@@ -19,11 +19,20 @@ POLL_INTERVAL=5
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PROJECT="${REPO_ROOT}/tests/FFmpegKit.Android.DeviceTests/FFmpegKit.Android.DeviceTests.csproj"
 
-# The .NET 9 band builds net8/net9 and the .NET 10 band builds net9/net10, so pick the SDK that
-# owns the requested target framework. The SDK is resolved from the working directory, and the
-# repository's global.json pins .NET 9, hence the scratch directory.
+# Pick the SDK band that owns the requested target framework's Android API level: API 34 is the
+# .NET 8 workload, 35 the .NET 9 one, 36 the .NET 10 one. The API level matters because that is
+# what owns the runtime packs - a net8.0-android34.0 app compiles fine on the .NET 9 band and then
+# fails at packaging with:
+#
+#     error NETSDK1112: The runtime pack for Microsoft.Android.Runtime.34.android-x64 was not
+#     downloaded. Try running a NuGet restore with the RuntimeIdentifier 'android-x64'.
+#
+# The restore that error suggests does not help; the packs come from the workload. The SDK is
+# resolved from the working directory, and the repository's global.json pins .NET 9, hence the
+# scratch directory.
 case "${TARGET_FRAMEWORK}" in
     net10.0-*) sdk_major=10 ;;
+    net8.0-*)  sdk_major=8 ;;
     *)         sdk_major=9 ;;
 esac
 
