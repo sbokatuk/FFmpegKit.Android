@@ -1,8 +1,10 @@
 # FFmpegKit.Android
 
 [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android?label=nuget)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android)
-[![Bindings: MIT](https://img.shields.io/badge/bindings-MIT-blue)](LICENSE)
-[![Packages: LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/packages-LGPL--3.0%20or%20GPL--3.0-orange)](#license)
+[![release](https://github.com/sbokatuk/DatadogNet.Android/actions/workflows/release.yml/badge.svg)](https://github.com/sbokatuk/DatadogNet.Android/actions/workflows/release.yml)
+[![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#packages)
+[![ffmpeg 8.1.2](https://img.shields.io/badge/ffmpeg-8.1.2-632CA6)](#where)
+[![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#licence)
 
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
