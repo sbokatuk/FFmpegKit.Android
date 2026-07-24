@@ -1,5 +1,7 @@
 using System;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	public partial class FFmpegKitConfig

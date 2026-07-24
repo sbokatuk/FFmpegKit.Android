@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	public partial class FFprobeKit
