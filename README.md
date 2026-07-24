@@ -34,6 +34,8 @@ So the `.aar` files come from the community fork, via Maven Central — see [`Fe
 
 The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
+Every download is verified against a SHA-256 baseline committed at [`build/checksums/`](build/checksums) — one file per FFmpegKit line, recorded once with [`build/update-checksums.sh`](build/update-checksums.sh) (from Maven Central's own `.sha256` sidecars where published) and enforced on every fetch, locally and in CI. A corrupted or substituted artifact fails the fetch instead of ending up inside a shipped package.
+
 The fork currently publishes three lines, each with all eight variants:
 
 | FFmpegKit | Bundled FFmpeg | ABIs | minSdk |
@@ -239,7 +241,7 @@ Python 3 is also needed, for the package merge step.
 ./src/FFmpegKit.Android/BuildNugets.sh 8.1.2.4-rc.1  # ...or with an explicit package version
 ```
 
-`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
+`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it — record its checksum baseline first with `./build/update-checksums.sh 8.2.0`, since the fetch refuses to run against a line that has no committed baseline. `./FetchJars.sh --verify` re-checks the files already on disk without downloading anything.
 
 ### A single variant
 

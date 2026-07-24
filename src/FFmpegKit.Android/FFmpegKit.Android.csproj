@@ -92,8 +92,8 @@
       embedded here or every FFmpeg call throws NoClassDefFoundError on device. Bind="false":
       consumers only need the classes at runtime, not a C# binding for them.
     -->
-    <AndroidLibrary Include="Jars/smart-exception-common-0.2.1.jar" Bind="false" />
-    <AndroidLibrary Include="Jars/smart-exception-java-0.2.1.jar" Bind="false" />
+    <AndroidLibrary Include="Jars/smart-exception-common-$(SmartExceptionVersion).jar" Bind="false" />
+    <AndroidLibrary Include="Jars/smart-exception-java-$(SmartExceptionVersion).jar" Bind="false" />
   </ItemGroup>
 
   <ItemGroup>

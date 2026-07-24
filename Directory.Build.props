@@ -16,6 +16,13 @@
     <FFmpegKitNativeVersion>8.1.7</FFmpegKitNativeVersion>
     <VersionPrefix>$(FFmpegVersion)</VersionPrefix>
 
+    <!--
+      Runtime dependency of FFmpegKitConfig's static initialiser, embedded into every package.
+      Jars/FetchJars.sh downloads the jars named by this property and the .csproj embeds the
+      same names, so this is the only place the version appears.
+    -->
+    <SmartExceptionVersion>0.2.1</SmartExceptionVersion>
+
     <!-- Which FFmpegKit variant to build. CI builds each of these in turn. -->
     <FFmpegKitBuildType Condition=" '$(FFmpegKitBuildType)' == '' ">Video</FFmpegKitBuildType>
 
