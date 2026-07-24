@@ -2,9 +2,9 @@
 
 [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android?label=nuget)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android)
 [![release](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml/badge.svg)](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml)
-[![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#packages)
+[![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#installation)
 [![ffmpeg 8.1.2](https://img.shields.io/badge/ffmpeg-8.1.2-632CA6)](#about)
-[![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#licence)
+[![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#license)
 
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
@@ -151,6 +151,12 @@ Execute your FFmpeg command
 ```
 FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 ```
+
+> If your app's own root namespace starts with `FFmpegKit` (say, `FFmpegKit.MyApp`), the bare
+> `FFmpegKit` above resolves to your namespace instead of the class and fails to compile — add
+> `using FFmpeg = Ffmpegkit.Droid.FFmpegKit;` and call `FFmpeg.Execute(...)`, as the sample and
+> the device tests do. The [migration notes](#installation) explain why the namespace is not
+> `FFmpegKit.*` itself.
 
 More examples and usage can be found in the [original FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android). That repository is archived, but the Java API it documents is the one these bindings expose, so it remains the reference.
 
