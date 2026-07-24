@@ -212,7 +212,7 @@ public static class SmokeTests
         }
         finally
         {
-            FFmpegKitConfig.EnableLogCallback((ILogCallback)null!);
+            FFmpegKitConfig.DisableLogCallback();
         }
 
         Assert(Volatile.Read(ref lines) > 0, "The log delegate never fired.");

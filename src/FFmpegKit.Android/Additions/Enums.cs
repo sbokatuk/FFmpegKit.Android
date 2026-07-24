@@ -1,5 +1,7 @@
 using System;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	/// <summary>Managed counterpart of the Java <c>SessionState</c> enum.</summary>

@@ -1,5 +1,10 @@
 using System;
 
+// The generated binding compiles with Nullable disabled and carries no annotations; these
+// hand-written additions are annotation-correct, so nullable-enabled consumers get real
+// nullability information for at least the surface they touch most.
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	public partial class FFmpegKitConfig
@@ -11,8 +16,8 @@ namespace Ffmpegkit.Droid
 		/// an FFmpegKit worker thread — marshal to the UI thread before touching UI.
 		/// <para>
 		/// The delegate is held by FFmpegKit until it is replaced, so anything it captures stays
-		/// alive too — avoid capturing an Activity. There is no Disable method: clear it by
-		/// calling <c>EnableLogCallback((ILogCallback)null)</c>.
+		/// alive too — avoid capturing an Activity. Clear it with
+		/// <see cref="DisableLogCallback"/>.
 		/// </para>
 		/// </remarks>
 		public static void EnableLogCallback (Action<Log> logCallback)
@@ -36,5 +41,17 @@ namespace Ffmpegkit.Droid
 
 			EnableStatisticsCallback (new ActionStatisticsCallback (statisticsCallback));
 		}
+
+		/// <summary>Stops routing FFmpeg log lines to a previously enabled callback.</summary>
+		/// <remarks>
+		/// The delegate overload above deliberately rejects null; the native way to clear the
+		/// hook is passing a null interface, which nullable-enabled callers could only write as
+		/// <c>EnableLogCallback ((ILogCallback) null!)</c>. This says the same thing by name.
+		/// </remarks>
+		public static void DisableLogCallback () => EnableLogCallback ((ILogCallback) null!);
+
+		/// <summary>Stops routing FFmpeg statistics samples to a previously enabled callback.</summary>
+		/// <remarks>See <see cref="DisableLogCallback"/>.</remarks>
+		public static void DisableStatisticsCallback () => EnableStatisticsCallback ((IStatisticsCallback) null!);
 	}
 }

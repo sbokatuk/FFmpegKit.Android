@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	public partial class MediaInformation

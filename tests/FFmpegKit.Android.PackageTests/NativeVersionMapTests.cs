@@ -46,7 +46,43 @@ public class NativeVersionMapTests
     [Fact]
     public void Mapping_lists_every_supported_build()
     {
-        Assert.Equal(3, Mapping.Count);
+        // Append-only: lines that have shipped stay in the mapping so their tags remain
+        // releasable. New rows are expected over time, so this is a floor, not an exact count.
+        Assert.True(Mapping.Count >= 3, $"native-versions.tsv lists {Mapping.Count} rows; the 6.x/7.x/8.x lines must not be removed.");
+    }
+
+    [Fact]
+    public void Every_mapping_row_has_a_checksum_baseline()
+    {
+        // FetchJars.sh refuses to download a line that has no committed SHA-256 baseline, so a
+        // native-versions.tsv row without one is unreleasable. build/update-checksums.sh records
+        // a baseline in one command; this test is the reminder to run it.
+        var smartException = ReadProperty("SmartExceptionVersion");
+        var variants = new[] { "audio", "full", "full-gpl", "https", "https-gpl", "min", "min-gpl", "video" };
+
+        foreach (var (_, ffmpegKit) in Mapping)
+        {
+            var path = Path.Combine(RepoRoot, "build", "checksums", $"{ffmpegKit}.sha256");
+            Assert.True(File.Exists(path), $"Missing checksum baseline {path}; run build/update-checksums.sh {ffmpegKit}.");
+
+            var entries = File.ReadAllLines(path)
+                .Where(line => line.Trim().Length > 0)
+                .Select(line =>
+                {
+                    var match = Regex.Match(line, "^([0-9a-f]{64})  (\\S+)$");
+                    Assert.True(match.Success, $"{path}: malformed line '{line}'.");
+                    return match.Groups[2].Value;
+                })
+                .ToHashSet();
+
+            foreach (var variant in variants)
+            {
+                Assert.Contains($"ffmpeg-kit-{variant}-{ffmpegKit}.aar", entries);
+            }
+
+            Assert.Contains($"smart-exception-common-{smartException}.jar", entries);
+            Assert.Contains($"smart-exception-java-{smartException}.jar", entries);
+        }
     }
 
     [Fact]

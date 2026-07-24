@@ -1,5 +1,7 @@
 using System;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	// Adapters adapting a delegate to FFmpegKit's single-method Java callback interfaces.

@@ -2,9 +2,9 @@
 
 [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android?label=nuget)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android)
 [![release](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml/badge.svg)](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml)
-[![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#packages)
+[![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#installation)
 [![ffmpeg 8.1.2](https://img.shields.io/badge/ffmpeg-8.1.2-632CA6)](#about)
-[![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#licence)
+[![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#license)
 
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
 
@@ -34,6 +34,8 @@ So the `.aar` files come from the community fork, via Maven Central — see [`Fe
 
 The version is set by `FFmpegKitNativeVersion` in [`Directory.Build.props`](Directory.Build.props), which `FetchJars.sh` reads, so the download and the `.aar` the project expects cannot drift apart.
 
+Every download is verified against a SHA-256 baseline committed at [`build/checksums/`](build/checksums) — one file per FFmpegKit line, recorded once with [`build/update-checksums.sh`](build/update-checksums.sh) (from Maven Central's own `.sha256` sidecars where published) and enforced on every fetch, locally and in CI. A corrupted or substituted artifact fails the fetch instead of ending up inside a shipped package.
+
 The fork currently publishes three lines, each with all eight variants:
 
 | FFmpegKit | Bundled FFmpeg | ABIs | minSdk |
@@ -45,6 +47,8 @@ The fork currently publishes three lines, each with all eight variants:
 **FFmpegKit's version is not FFmpeg's.** FFmpegKit `8.1.7` packages FFmpeg `n8.1.2`; the fork versions its own releases independently of the FFmpeg it pins. The bundled version above is read out of the shipped `libavcodec.so`, and every generated release note states it, because upstream's own notes mention other FFmpeg versions in passing and are easy to misread.
 
 None of them ship 32-bit binaries, so dropping back to an older line does not restore `armeabi-v7a` or `x86` support.
+
+Both constraints are surfaced at build time in consuming apps by a small `.targets` file every package carries: **`FFMPEGKIT001`** warns when `SupportedOSPlatformVersion` is below 24, **`FFMPEGKIT002`** when the build includes 32-bit runtime identifiers (`android-arm`, `android-x86`) — each otherwise only fails on a device, when `libffmpegkit.so` does not load. Both are ordinary MSBuild warnings, suppressible per project via `NoWarn` for apps that gate FFmpegKit usage at runtime.
 
 ### Releasing an older line
 
@@ -148,6 +152,12 @@ Execute your FFmpeg command
 FFmpegKit.Execute("-i input.mov -c:v libx264 output.mp4");
 ```
 
+> If your app's own root namespace starts with `FFmpegKit` (say, `FFmpegKit.MyApp`), the bare
+> `FFmpegKit` above resolves to your namespace instead of the class and fails to compile — add
+> `using FFmpeg = Ffmpegkit.Droid.FFmpegKit;` and call `FFmpeg.Execute(...)`, as the sample and
+> the device tests do. The [migration notes](#installation) explain why the namespace is not
+> `FFmpegKit.*` itself.
+
 More examples and usage can be found in the [original FFmpegKit wiki](https://github.com/arthenica/ffmpeg-kit/wiki/Android). That repository is archived, but the Java API it documents is the one these bindings expose, so it remains the reference.
 
 ### Beyond the generated binding
@@ -195,6 +205,8 @@ stream.IsVideo / IsAudio
 FFmpegKitConfig.EnableLogCallback(log => Debug.WriteLine(log.Message));
 ```
 
+Clear either hook by name — `FFmpegKitConfig.DisableLogCallback()` / `DisableStatisticsCallback()` — instead of the `EnableLogCallback((ILogCallback)null)` incantation. The delegates are held by FFmpegKit until cleared, so anything they capture stays alive too.
+
 **Use managed enums.** `SessionState` and `Level` are Java enums, so they cannot be used in a `switch`, and comparing them with `==` compares managed peer references rather than the underlying constants. `ToManaged()` converts at the boundary.
 
 ### Working with user-picked files
@@ -239,7 +251,7 @@ Python 3 is also needed, for the package merge step.
 ./src/FFmpegKit.Android/BuildNugets.sh 8.1.2.4-rc.1  # ...or with an explicit package version
 ```
 
-`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it.
+`FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it — record its checksum baseline first with `./build/update-checksums.sh 8.2.0`, since the fetch refuses to run against a line that has no committed baseline. `./FetchJars.sh --verify` re-checks the files already on disk without downloading anything.
 
 ### A single variant
 

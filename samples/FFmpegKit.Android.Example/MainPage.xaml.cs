@@ -24,6 +24,7 @@ public partial class MainPage : ContentPage
 
 	string? _inputPath;
 	TimeSpan? _sourceDuration;
+	CancellationTokenSource? _cancellation;
 
 	public MainPage()
 	{
@@ -70,6 +71,7 @@ public partial class MainPage : ContentPage
 		var inputPath = _inputPath;
 
 		ConvertBtn.IsEnabled = false;
+		CancelBtn.IsEnabled = true;
 		Spinner.IsVisible = true;
 		Spinner.IsRunning = true;
 		ConversionProgress.Progress = 0;
@@ -80,6 +82,8 @@ public partial class MainPage : ContentPage
 
 		AfterPlayer.Stop();
 		AfterPlayer.Source = null;
+
+		_cancellation = new CancellationTokenSource();
 
 		try
 		{
@@ -93,7 +97,8 @@ public partial class MainPage : ContentPage
 					: $"{p.Position:mm\\:ss} · {p.Speed:0.#}x";
 			});
 
-			var (success, message, outputPath) = await RunConversionAsync(option, inputPath, progress, _sourceDuration);
+			var (success, message, outputPath) =
+				await RunConversionAsync(option, inputPath, progress, _sourceDuration, _cancellation.Token);
 			StatusLabel.Text = message;
 			SemanticScreenReader.Announce(message);
 
@@ -106,6 +111,9 @@ public partial class MainPage : ContentPage
 		}
 		finally
 		{
+			_cancellation.Dispose();
+			_cancellation = null;
+			CancelBtn.IsEnabled = false;
 			Spinner.IsRunning = false;
 			Spinner.IsVisible = false;
 			ConversionProgress.IsVisible = false;
@@ -114,11 +122,20 @@ public partial class MainPage : ContentPage
 		}
 	}
 
+	void OnCancelClicked(object sender, EventArgs e)
+	{
+		// Cancellation is co-operative: FFmpeg stops as soon as it notices, and the awaited
+		// session then completes with a cancelled return code rather than throwing.
+		_cancellation?.Cancel();
+		StatusLabel.Text = "Cancelling...";
+	}
+
 	static async Task<(bool Success, string Message, string OutputPath)> RunConversionAsync(
 		ConversionOption option,
 		string inputPath,
 		IProgress<FFmpegProgress> progress,
-		TimeSpan? sourceDuration)
+		TimeSpan? sourceDuration,
+		CancellationToken cancellationToken)
 	{
 		var outputPath = Path.Combine(FileSystem.CacheDirectory, option.OutputFileName);
 
@@ -130,13 +147,16 @@ public partial class MainPage : ContentPage
 		// Awaited directly: no Task.Run, because ExecuteAsync hands the work to FFmpegKit's own
 		// executor rather than blocking a thread pool thread for the length of the transcode.
 		// The duration is what lets FFmpegKit report a percentage rather than just a position.
-		var session = await FFmpeg.ExecuteAsync(command, progress, sourceDuration);
+		var session = await FFmpeg.ExecuteAsync(command, progress, sourceDuration, cancellationToken);
 
 		if (session.Succeeded())
 		{
 			var outputSize = new FileInfo(outputPath).Length;
 			return (true, $"Success! Converted video written to:\n{outputPath}\n({outputSize:N0} bytes)", outputPath);
 		}
+
+		if (session.ReturnCode is { IsValueCancel: true })
+			return (false, "Conversion cancelled.", outputPath);
 
 		var logs = session.FailStackTrace ?? session.AllLogsAsString;
 		return (false, $"Conversion failed (return code {session.ReturnCode}).\n{logs}", outputPath);

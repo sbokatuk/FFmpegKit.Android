@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 
+#nullable enable
+
 namespace Ffmpegkit.Droid
 {
 	/// <summary>
@@ -17,23 +19,23 @@ namespace Ffmpegkit.Droid
 	/// </remarks>
 	internal static class MediaValues
 	{
-		internal static double? Seconds (string value) => Number (value);
+		internal static double? Seconds (string? value) => Number (value);
 
-		internal static long? Integer (string value) =>
+		internal static long? Integer (string? value) =>
 			long.TryParse (value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
 				? parsed
 				: null;
 
-		internal static double? Number (string value) =>
+		internal static double? Number (string? value) =>
 			double.TryParse (value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
 				? parsed
 				: null;
 
-		internal static int? Int32 (Java.Lang.Long value) =>
+		internal static int? Int32 (Java.Lang.Long? value) =>
 			value is null ? null : checked ((int)value.LongValue ());
 
 		/// <summary>Parses a rational such as "30/1" or "30000/1001", as FFprobe reports rates.</summary>
-		internal static double? Rational (string value)
+		internal static double? Rational (string? value)
 		{
 			if (string.IsNullOrWhiteSpace (value))
 				return null;
@@ -51,7 +53,7 @@ namespace Ffmpegkit.Droid
 		}
 
 		/// <summary>Flattens a JSON object into string values, so callers need no Java JSON type.</summary>
-		internal static IReadOnlyDictionary<string, string> ToDictionary (Org.Json.JSONObject json)
+		internal static IReadOnlyDictionary<string, string> ToDictionary (Org.Json.JSONObject? json)
 		{
 			var values = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
 
@@ -67,7 +69,9 @@ namespace Ffmpegkit.Droid
 				if (string.IsNullOrEmpty (key))
 					continue;
 
-				var value = json.OptString (key, null);
+				// Mono.Android annotates the fallback as non-nullable, but OptString handles null
+				// fine and it is what distinguishes "absent" from a legitimately empty value.
+				var value = json.OptString (key, null!);
 
 				if (value is not null)
 					values[key] = value;
