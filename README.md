@@ -48,6 +48,8 @@ The fork currently publishes three lines, each with all eight variants:
 
 None of them ship 32-bit binaries, so dropping back to an older line does not restore `armeabi-v7a` or `x86` support.
 
+Both constraints are surfaced at build time in consuming apps by a small `.targets` file every package carries: **`FFMPEGKIT001`** warns when `SupportedOSPlatformVersion` is below 24, **`FFMPEGKIT002`** when the build includes 32-bit runtime identifiers (`android-arm`, `android-x86`) — each otherwise only fails on a device, when `libffmpegkit.so` does not load. Both are ordinary MSBuild warnings, suppressible per project via `NoWarn` for apps that gate FFmpegKit usage at runtime.
+
 ### Releasing an older line
 
 Tags name the FFmpeg version: **`v6.1.6.4` publishes `6.1.6.4`** and builds against the FFmpegKit release that packages FFmpeg 6.1.6, looked up in [`build/native-versions.tsv`](build/native-versions.tsv). The fourth component is the binding revision and any prerelease suffix is ignored when resolving (`v8.1.2.4-rc.1` → FFmpeg `8.1.2`). A tag naming a version that is not in the mapping fails the release with the list of known builds, so an old-style tag like `v8.1.7.4` cannot be published by mistake. No branch or `Directory.Build.props` edit is needed.

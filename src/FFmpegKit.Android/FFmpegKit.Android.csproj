@@ -117,6 +117,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      Build-time surfacing of the native constraints (64-bit only, API 24+) that otherwise fail
+      at app runtime. Packed under both build/ (direct references) and buildTransitive/ (apps
+      that get this package through FFmpegKit.Net.<Variant>), named after the package id as
+      NuGet's auto-import requires.
+    -->
+    <None Include="FFmpegKit.Net.Android.targets" Pack="true" PackagePath="build/$(PackageId).targets" Visible="false" />
+    <None Include="FFmpegKit.Net.Android.targets" Pack="true" PackagePath="buildTransitive/$(PackageId).targets" Visible="false" />
+
     <None Include="icon.png" Pack="true" PackagePath="/" Visible="false" />
     <None Include="../../README.md" Pack="true" PackagePath="/" Visible="false" />
 

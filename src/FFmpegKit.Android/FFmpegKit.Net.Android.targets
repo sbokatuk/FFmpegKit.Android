@@ -1,0 +1,52 @@
+<Project>
+
+  <!--
+    Imported into every consuming project through NuGet's build/buildTransitive mechanism.
+
+    FFmpegKit's native constraints - 64-bit only (arm64-v8a, x86_64), Android API 24+ - are
+    otherwise invisible until the app crashes loading libffmpegkit.so on a real device: a
+    build for armeabi-v7a or minSdk 21 compiles, packages and installs without complaint.
+    Surface both at build time instead.
+
+    Warnings, not errors: an app may legitimately keep a lower minSdk or 32-bit runtime
+    identifiers and gate its FFmpegKit calls at runtime. Each check has its own code so it
+    can be suppressed individually via NoWarn.
+  -->
+  <!--
+    PrepareForBuild, not Build: BeforeTargets="Build" would run after Build's entire dependency
+    chain - including Android manifest merging, which hard-errors on minSdk below the .aar's 24
+    before ever getting there. Hooked here, FFMPEGKIT001 precedes that java-worded AMM0000 error
+    with an actionable .NET one, and both checks still run when packaging fails.
+
+    Gated to the RID-agnostic pass ('$(RuntimeIdentifier)' == ''): Android app builds re-enter
+    once per runtime identifier, which would repeat each warning per ABI; the outer pass sees
+    the full RuntimeIdentifiers list exactly once.
+  -->
+  <Target Name="_FFmpegKitNetAndroidConstraintChecks"
+          BeforeTargets="PrepareForBuild"
+          Condition=" '$(AndroidApplication)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(RuntimeIdentifier)' == '' ">
+
+    <Warning Code="FFMPEGKIT001"
+             Condition=" '$(SupportedOSPlatformVersion)' != '' and $([MSBuild]::VersionLessThan('$(SupportedOSPlatformVersion)', '24.0')) "
+             Text="FFmpegKit's native libraries require Android API 24+, but SupportedOSPlatformVersion is $(SupportedOSPlatformVersion): devices below API 24 will install this app and crash loading libffmpegkit.so. Raise SupportedOSPlatformVersion to 24, or gate FFmpegKit usage at runtime and add FFMPEGKIT001 to NoWarn." />
+
+    <ItemGroup>
+      <_FFmpegKitNetAndroidRidRaw Include="$(RuntimeIdentifiers)" />
+    </ItemGroup>
+
+    <RemoveDuplicates Inputs="@(_FFmpegKitNetAndroidRidRaw)">
+      <Output TaskParameter="Filtered" ItemName="_FFmpegKitNetAndroidRid" />
+    </RemoveDuplicates>
+
+    <ItemGroup>
+      <_FFmpegKitNetAndroid32BitRid Include="@(_FFmpegKitNetAndroidRid)"
+                                    Condition=" '%(Identity)' == 'android-arm' or '%(Identity)' == 'android-x86' " />
+    </ItemGroup>
+
+    <Warning Code="FFMPEGKIT002"
+             Condition=" '@(_FFmpegKitNetAndroid32BitRid)' != '' "
+             Text="FFmpegKit ships 64-bit native libraries only (arm64-v8a, x86_64), but this build includes 32-bit Android runtime identifiers (@(_FFmpegKitNetAndroid32BitRid, ', ')): 32-bit devices will install this app and crash loading libffmpegkit.so. Set RuntimeIdentifiers to android-arm64;android-x64, or add FFMPEGKIT002 to NoWarn." />
+
+  </Target>
+
+</Project>

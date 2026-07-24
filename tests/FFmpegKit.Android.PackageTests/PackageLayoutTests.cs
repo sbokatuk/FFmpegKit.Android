@@ -90,6 +90,30 @@ public class PackageLayoutTests
 
     [Theory]
     [MemberData(nameof(Packages.Variants), MemberType = typeof(Packages))]
+    public void Package_ships_the_constraint_check_targets(string variant)
+    {
+        using var package = Packages.OpenPackage(variant);
+
+        // The native constraints (64-bit only, API 24+) fail at app runtime if this file stops
+        // being packed - nothing else in the pipeline would notice. buildTransitive matters most:
+        // apps normally reference FFmpegKit.Net.<Variant>, not this binding directly.
+        foreach (var folder in new[] { "build", "buildTransitive" })
+        {
+            var path = $"{folder}/{Packages.PackageId(variant)}.targets";
+            var entry = package.GetEntry(path);
+            Assert.True(entry is not null, $"{Packages.PackageId(variant)} is missing '{path}'.");
+
+            using var reader = new StreamReader(entry!.Open());
+            var content = reader.ReadToEnd();
+
+            Assert.Contains("FFMPEGKIT001", content);
+            Assert.Contains("FFMPEGKIT002", content);
+            Assert.Contains("AndroidApplication", content);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Packages.Variants), MemberType = typeof(Packages))]
     public void Package_declares_the_expected_nuspec_metadata(string variant)
     {
         using var package = Packages.OpenPackage(variant);
