@@ -136,25 +136,57 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  sample:
-    name: build sample app
+  build-samples:
+    name: sample build (${{ matrix.tfm }})
     needs: pack
     runs-on: ubuntu-latest
+    strategy:
+      # fail-fast off: the net8 and net10 legs fail for opposite reasons - an old UI dependency
+      # dropping the oldest band, or a new one not yet supporting the newest - so a red net10 next
+      # to a green net8 already localises the cause. Cancelling one when the other breaks would
+      # throw that signal away.
+      fail-fast: false
+      matrix:
+        # The net8 and net10 extremes of what the binding package ships, each built on its own SDK
+        # band. The sample restores the packed package through a PackageReference exactly as a
+        # consumer would and links under the Release toolchain (R8), where a binding that restores
+        # fine in Debug can still fail. It has regressed silently before - a renamed property left
+        # it referencing something gone, and a wrong version property resolved a published package
+        # over the one just built - both invisible until something actually built it.
+        include:
+          - band: net8
+            tfm: net8.0-android34.0
+          - band: net10
+            tfm: net10.0-android36.0
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
-      - name: Install MAUI workload
-        run: dotnet workload install maui-android
+      - name: Install the MAUI Android workload for the ${{ matrix.band }} band
+        run: |
+          # The sample targets exactly one framework per band (SampleSdkBand), so a single band's
+          # workload is enough and restore never walks a framework this band cannot build. Pinned
+          # through a scratch global.json because the band owns the runtime packs - a net8 app on
+          # the net9 band fails at packaging with NETSDK1112.
+          major="$(printf '%s' '${{ matrix.band }}' | sed 's/net//')"
+          sdk="$(dotnet --list-sdks | grep "^${major}\." | tail -1 | cut -d' ' -f1)"
+          dir="${RUNNER_TEMP}/workload-${{ matrix.band }}"
+          mkdir -p "${dir}"
+          ( cd "${dir}" \
+            && dotnet new globaljson --sdk-version "${sdk}" --force \
+            && dotnet workload install maui-android )
 
-      - name: Set up Android SDK platforms
+      - name: Set up the Android SDK platforms
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35'
+          packages: 'platforms;android-34 platforms;android-36'
 
       - name: Download packages
         uses: actions/download-artifact@v4
@@ -162,19 +194,20 @@ jobs:
           name: nuget-packages
           path: artifacts
 
-      # The sample consumes the packed package through a PackageReference exactly as a user
-      # would, so it is the only thing here that checks the API is still usable the way the
-      # README documents it. It has regressed silently twice: once when a renamed property left
-      # it referring to something that no longer existed, and once when it resolved a published
-      # package from nuget.org instead of the one just built, because its version property
-      # pointed at the wrong number. Nothing built it, so nothing noticed.
-      #
-      # Build only - the device tests already prove the binding runs.
-      - name: Build the sample against the packed package
+      - name: Build the ${{ matrix.tfm }} sample against the packed package
         run: |
-          dotnet build samples/FFmpegKit.Android.Example/FFmpegKit.Android.Example.csproj \
-            --configuration Release \
-            -p:FFmpegKitVersion="${{ inputs.version }}"
+          # Built on the band's own SDK: the repository global.json pins .NET 9, so a scratch
+          # global.json in the invocation directory selects the band that owns this framework, the
+          # same mechanism run-device-tests.sh uses.
+          major="$(printf '%s' '${{ matrix.band }}' | sed 's/net//')"
+          sdk="$(dotnet --list-sdks | grep "^${major}\." | tail -1 | cut -d' ' -f1)"
+          dir="${RUNNER_TEMP}/build-${{ matrix.band }}"
+          mkdir -p "${dir}"
+          printf '{ "sdk": { "version": "%s", "rollForward": "latestFeature" } }\n' "${sdk}" > "${dir}/global.json"
+          ( cd "${dir}" && dotnet build "${GITHUB_WORKSPACE}/samples/FFmpegKit.Android.Example/FFmpegKit.Android.Example.csproj" \
+              --configuration Release -f "${{ matrix.tfm }}" \
+              -p:SampleSdkBand="${{ matrix.band }}" \
+              -p:FFmpegKitVersion="${{ inputs.version }}" )
 
   e2e:
     name: emulator smoke test (${{ matrix.target-framework }})
