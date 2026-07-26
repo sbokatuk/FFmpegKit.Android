@@ -1,7 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-android35.0</TargetFramework>
+    <!--
+      One target framework per SDK band, selected by SampleSdkBand. The CI sample matrix builds
+      the net8 and net10 extremes, each on its own SDK band (the API level owns the runtime packs:
+      34/35/36 for net8/net9/net10), so a single band's workload is enough per leg and restore
+      never walks a target framework that band cannot build. Unset locally it is the net9 dev band,
+      so `dotnet build` just works without installing the other two.
+    -->
+    <SampleSdkBand Condition=" '$(SampleSdkBand)' == '' ">net9</SampleSdkBand>
+    <TargetFrameworks Condition=" '$(SampleSdkBand)' == 'net8' ">net8.0-android34.0</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(SampleSdkBand)' == 'net9' ">net9.0-android35.0</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(SampleSdkBand)' == 'net10' ">net10.0-android36.0</TargetFrameworks>
 
     <OutputType>Exe</OutputType>
     <RootNamespace>FFmpegKit.Android.Example</RootNamespace>
@@ -47,11 +57,42 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--
+    $(MauiVersion) is whatever Controls the installed workload bundles, which on the net10 band is
+    older than the 10.0.60 CommunityToolkit.Maui.MediaElement 10.0.0 declares - restore then fails
+    NU1605. Controls is an ordinary NuGet package independent of the workload pack, so the net10
+    band pins the toolkit's floor explicitly; net8 and net9 keep the workload's own.
+  -->
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net10.0'))">
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net10.0'))">
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
+  </ItemGroup>
+
+  <!--
+    CommunityToolkit.Maui and its MediaElement (used for the before/after video preview) have no
+    single version that spans net8 and net10 - each band dropped support as the next arrived - so
+    the versions are selected per target framework. Microsoft.Extensions.Logging.Debug matches the
+    band too, to avoid a downgrade against the MAUI metapackage's transitive Logging on net10.
+  -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net8.0'))">
+    <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
+    <PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="4.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
     <PackageReference Include="CommunityToolkit.Maui" Version="11.0.0" />
     <PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net10.0'))">
+    <PackageReference Include="CommunityToolkit.Maui" Version="15.0.0" />
+    <PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
 
     <!--
       The locally built package, resolved from ./artifacts via the local-artifacts source in the
