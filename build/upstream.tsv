@@ -1,0 +1,30 @@
+# What the upstream-drift workflow watches, and the single source of truth for it.
+#
+# build/check-upstream.sh reads this; it knows how to query each ecosystem but nothing about which
+# components this repository binds. Adding a native SDK means adding a row here.
+#
+# Columns are single-tab-separated.
+#   group    reporting group - one GitHub issue per group, titled with this text
+#   label    how the component is named inside the issue
+#   kind     cocoapods | maven | github-release | github-tag
+#   pin      the MSBuild property in Directory.Build.props holding the pinned version
+#   locator  kind-specific: pod name, groupId:artifactId[:packaging][@repo], or owner/repo
+#   confirm  download URL template with {version}, or "-" to derive it from the locator
+#
+# FFmpegKitNativeVersion is watched, not FFmpegVersion: the two number differently and do not track
+# each other (FFmpegKit 8.1.7 packages FFmpeg n8.1.2), and only the FFmpegKit number names an .aar
+# that exists upstream. build/native-versions.tsv maps a new one back to its FFmpeg version, which
+# is what the package version is based on - so a finding here means "add a row there, then re-pin".
+#
+# arthenica/ffmpeg-kit is archived with every release stripped of assets, and ffmpeg-kit-next is
+# source-only; dev.ffmpegkit-maintained is the fork that actually publishes .aar files. See the
+# README for the full comparison.
+#
+# Of the eight variants, ffmpeg-kit-full-gpl is the one checked. They are cut from one build and
+# released together, so eight rows would be eight copies of the same finding; if that ever stops
+# being true it shows up as the full-gpl download failing to confirm.
+#
+# group	label	kind	pin	locator	confirm
+FFmpegKit	FFmpegKit (dev.ffmpegkit-maintained)	maven	FFmpegKitNativeVersion	dev.ffmpegkit-maintained:ffmpeg-kit-full-gpl:aar	-
+# Bundled alongside the .aar files by build/.../FetchJars.sh, from its own GitHub releases.
+Smart Exception	tanersener/smart-exception	github-release	SmartExceptionVersion	tanersener/smart-exception	https://github.com/tanersener/smart-exception/releases/download/v{version}/smart-exception-java-{version}.jar
