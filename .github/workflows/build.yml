@@ -49,6 +49,22 @@ on:
         required: false
         default: '["net10.0-android36.0"]'
         type: string
+      e2e-api-levels:
+        description: >
+          Which Android API levels every variant runs on, as a JSON array. API 35 by default, with
+          the one API 31 leg listed in the e2e job. An older track passes both, because a library
+          that loads on API 35 can still be refused on API 31.
+        required: false
+        default: '[35]'
+        type: string
+      artifact-suffix:
+        description: >
+          Appended to the name of every artifact this run uploads. A workflow that calls this more
+          than once needs it, since artifact names are unique across a whole run. It is also what
+          keeps an older track's packages out of the nuget-packages artifact that pr.yml publishes.
+        required: false
+        default: ''
+        type: string
 
 env:
   DOTNET_NOLOGO: 'true'
@@ -136,7 +152,7 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: nuget-packages
+          name: nuget-packages${{ inputs.artifact-suffix }}
           path: |
             artifacts/*.nupkg
             artifacts/*.snupkg
@@ -147,7 +163,7 @@ jobs:
         if: ${{ inputs.verify && (always()) }}
         uses: actions/upload-artifact@v4
         with:
-          name: package-test-results
+          name: package-test-results${{ inputs.artifact-suffix }}
           path: '**/*.trx'
           if-no-files-found: ignore
           retention-days: 7
@@ -208,7 +224,7 @@ jobs:
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
-          name: nuget-packages
+          name: nuget-packages${{ inputs.artifact-suffix }}
           path: artifacts
 
       - name: Build the ${{ matrix.tfm }} sample against the packed package
@@ -241,7 +257,7 @@ jobs:
       matrix:
         variant: ${{ fromJSON(inputs.e2e-variants) }}
         target-framework: ${{ fromJSON(inputs.e2e-target-frameworks) }}
-        api-level: [35]
+        api-level: ${{ fromJSON(inputs.e2e-api-levels) }}
         include:
           - variant: Video
             target-framework: net8.0-android34.0
@@ -289,7 +305,7 @@ jobs:
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
-          name: nuget-packages
+          name: nuget-packages${{ inputs.artifact-suffix }}
           path: artifacts
 
       - name: Free disk space for the emulator
@@ -337,7 +353,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: device-test-logs-${{ matrix.variant }}-${{ matrix.target-framework }}-api${{ matrix.api-level }}
+          name: device-test-logs-${{ matrix.variant }}-${{ matrix.target-framework }}-api${{ matrix.api-level }}${{ inputs.artifact-suffix }}
           path: device-tests-logcat.txt
           if-no-files-found: ignore
           retention-days: 7
@@ -380,7 +396,7 @@ jobs:
       - name: Download packages
         uses: actions/download-artifact@v4
         with:
-          name: nuget-packages
+          name: nuget-packages${{ inputs.artifact-suffix }}
           path: artifacts
 
       - name: Free disk space for the emulator
@@ -421,7 +437,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sample-test-logs
+          name: sample-test-logs${{ inputs.artifact-suffix }}
           path: |
             sample-test-logcat.txt
             sample-test-screen.png

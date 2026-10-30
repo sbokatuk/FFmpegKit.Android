@@ -54,6 +54,8 @@ Both constraints are surfaced at build time in consuming apps by a small `.targe
 
 Tags name the FFmpeg version: **`v6.1.6.5` publishes `6.1.6.5`** and builds against the FFmpegKit release that packages FFmpeg 6.1.6, looked up in [`build/native-versions.tsv`](build/native-versions.tsv). The fourth component is the binding revision and any prerelease suffix is ignored when resolving (`v8.1.2.4-rc.1` → FFmpeg `8.1.2`). A tag naming a version that is not in the mapping fails the release with the list of known builds, so an old-style tag like `v8.1.7.4` cannot be published by mistake. No branch or `Directory.Build.props` edit is needed.
 
+Release through a pull request that adds the note, as for any other version. That pull request packs the track and runs it on an emulator, which nothing else does: a pull request without one builds the default track only, and a release verifies nothing itself. A tag pushed by hand skips the check.
+
 Locally, pass the native version as the second argument:
 
 ```sh
@@ -312,7 +314,7 @@ It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.s
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests, the emulator smoke tests (all 8 variants on net10, plus Video and Audio on net8) and a run of the sample on an emulator, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
+| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests, the emulator smoke tests (all 8 variants on net10, plus Video and Audio on net8) and a run of the sample on an emulator, then publishes the betas to nuget.org. A pull request that adds a release note for an older track or changes its row in the mapping also runs that track, as does one that changes these checks, which runs them all: all 8 variants packed and tested, Audio and Video on net8 on API 31 and 35, and the sample. Those packages are not published. Forked PRs build and test but skip publishing, since they cannot read secrets. |
 | [`release.yml`](.github/workflows/release.yml) | tag `v*` | Packs at the tag's version, the tests having already run on that commit's pull request, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
 
 Both call the reusable [`build.yml`](.github/workflows/build.yml).
