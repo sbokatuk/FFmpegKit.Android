@@ -107,13 +107,29 @@ screen_shows() {
 
 # Takes the bounds from the dump instead of fixed coordinates, so that a different screen or font
 # cannot move a tap off its target. Reads the latest dump, so it follows a screen_shows.
-tap_text() {
+tap_node() {
     local left top right bottom
     # bounds="[left,top][right,bottom]"
-    read -r left top right bottom < <(grep -o "<node [^>]*text=\"$1\"[^>]*>" "${UI_DUMP}" \
+    read -r left top right bottom < <(grep -o "<node [^>]*$1[^>]*>" "${UI_DUMP}" \
         | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\1 \2 \3 \4/p') \
-        || fail "'$1' is not on screen"
+        || fail "$1 is not on screen"
     adb shell input tap "$(( (left + right) / 2 ))" "$(( (top + bottom) / 2 ))"
+}
+
+tap_text() {
+    tap_node "text=\"$1\""
+}
+
+# hide_error_dialogs stops new dialogs but does not close one that is already up, and uiautomator
+# only reads the focused window. A launcher that stalled during boot left the sample fully loaded
+# behind its dialog, and this script timed out waiting for text it could not see. By resource id
+# because the label is translated. An ANR of the sample's own would still be in the log, so closing
+# its dialog here would not hide it from require_healthy.
+close_leftover_dialog() {
+    if grep 'resource-id="android:id/aerr_wait"' "${UI_DUMP}" > /dev/null; then
+        echo "==> closing a system dialog that was already up"
+        tap_node 'resource-id="android:id/aerr_wait"'
+    fi
 }
 
 # The freeze needs a garbage collection after FFmpeg has run, and with Mono's default 4 MB nursery
@@ -157,6 +173,7 @@ until screen_shows 'text="Source: '; do
     [ "${SECONDS}" -lt "${deadline}" ] || fail "the sample did not load within ${LAUNCH_TIMEOUT}s"
     # Nothing has been tapped yet, so a slow first frame cannot be an ANR.
     require_running "while loading"
+    close_leftover_dialog
     sleep 2
 done
 
