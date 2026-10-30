@@ -46,8 +46,9 @@ public class NativeVersionMapTests
     [Fact]
     public void Mapping_lists_every_supported_build()
     {
-        // Append-only: lines that have shipped stay in the mapping so their tags remain
-        // releasable. New rows are expected over time, so this is a floor, not an exact count.
+        // One row per FFmpeg version: a respin of the same FFmpeg replaces its row, but a track
+        // is never dropped. New rows are expected over time, so this is a floor, not an exact
+        // count.
         Assert.True(Mapping.Count >= 3, $"native-versions.tsv lists {Mapping.Count} rows; the 6.x/7.x/8.x lines must not be removed.");
     }
 

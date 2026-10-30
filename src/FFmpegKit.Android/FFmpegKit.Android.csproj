@@ -89,8 +89,8 @@
     <!--
       FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions.
       That dependency is not bundled in the .aar, and its .pom declares it only from FFmpegKit
-      8.1.9 on, which no .NET build reads, so it has to be embedded here or every FFmpeg call
-      throws NoClassDefFoundError on device. Bind="false": consumers only need the classes at
+      6.0.4, 7.1.7 and 8.1.9 on, which no .NET build reads, so it has to be embedded here or every
+      FFmpeg call throws NoClassDefFoundError on device. Bind="false": consumers only need the classes at
       runtime, not a C# binding for them.
     -->
     <AndroidLibrary Include="Jars/smart-exception-common-$(SmartExceptionVersion).jar" Bind="false" />

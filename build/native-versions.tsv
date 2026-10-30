@@ -1,15 +1,19 @@
 # Maps the FFmpeg version a build actually contains to the FFmpegKit release that packages it.
 #
 # These are two different numbering schemes and they do not track each other: FFmpegKit 8.1.7
-# packages FFmpeg n8.1.2, FFmpegKit 7.1.6 packages FFmpeg n7.1.5. Package versions here are based
+# packages FFmpeg n8.1.2, FFmpegKit 7.1.7 packages FFmpeg n7.1.5. Package versions here are based
 # on the FFmpeg version, because that is what determines behaviour; the FFmpegKit version is only
 # needed to name the .aar to download.
 #
 # Every value below was read from the shipped libavcodec.so, not from upstream release prose,
 # which mentions other FFmpeg versions in passing and is easy to misread.
 #
+# There is one row per FFmpeg version. When FFmpegKit respins the same FFmpeg, its row is replaced,
+# so the newest respin is what gets built. Tags are unaffected: a release reads this file as it
+# stood at its tag. Replaced so far: 6.1.6 was 6.0.3, 7.1.5 was 7.1.6.
+#
 # ffmpeg	ffmpegkit
-6.1.6	6.0.3
-7.1.5	7.1.6
+6.1.6	6.0.4
+7.1.5	7.1.7
 8.1.2	8.1.7
 8.1.3	8.1.9

@@ -6,7 +6,7 @@
 
 - One project, `src/FFmpegKit.Android`, produces all eight packages `FFmpegKit.Net.<Variant>.Android` — `Audio|Full|FullGpl|Https|HttpsGpl|Min|MinGpl|Video`, selected by `FFmpegKitBuildType`.
 - Native binaries come from the community fork **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)** via Maven Central (`dev.ffmpegkit-maintained`). `arthenica/ffmpeg-kit` is archived with its assets deleted and `ffmpeg-kit-next` ships no binaries — do not point anything back at them.
-- **Two version schemes, never interchangeable.** `FFmpegVersion` (8.1.3) is the FFmpeg inside and what package versions are based on; `FFmpegKitNativeVersion` (8.1.9) is the fork release that names the `.aar`. Both live in `Directory.Build.props`; `build/native-versions.tsv` is the single source of truth for the pairing (`6.1.6↔6.0.3`, `7.1.5↔7.1.6`, `8.1.2↔8.1.7`, `8.1.3↔8.1.9`). Convert with `./build/resolve-versions.sh --ffmpeg 8.1.3` or `--ffmpegkit 8.1.9`.
+- **Two version schemes, never interchangeable.** `FFmpegVersion` (8.1.3) is the FFmpeg inside and what package versions are based on; `FFmpegKitNativeVersion` (8.1.9) is the fork release that names the `.aar`. Both live in `Directory.Build.props`; `build/native-versions.tsv` is the single source of truth for the pairing (`6.1.6↔6.0.4`, `7.1.5↔7.1.7`, `8.1.2↔8.1.7`, `8.1.3↔8.1.9`). Convert with `./build/resolve-versions.sh --ffmpeg 8.1.3` or `--ffmpegkit 8.1.9`.
 - Package version = `<FFmpeg version>.<binding revision>`, e.g. `8.1.3.1`. Three tracks publish in parallel; all ship `arm64-v8a` + `x86_64` at minSdk 24, never 32-bit.
 - Prerequisites: .NET 8, 9 and 10 SDKs each with the Android workload (the SDK is chosen by the *working directory's* `global.json`), plus Python 3 for the merge step.
 
@@ -44,7 +44,7 @@ Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the r
 
 - Pull request → pack all eight variants as `<FFmpegVersion>-beta.<pr>.<run>`, package tests, MAUI sample builds (net8 + net10), emulator smoke tests, then publish the betas to nuget.org. Forked PRs build and test but skip publishing. Betas cannot be deleted, only unlisted.
 - Merging `docs/release-notes/<version>.md` to `main` is the release: `auto-release.yml` tags the merge `v<version>` and dispatches `release.yml`, whose `guard` job proves the commit is an ancestor of the default branch before anything publishes.
-- Tags name the **FFmpeg** version: `v6.1.6.4` publishes 6.1.6.4 and binds FFmpegKit 6.0.3 from the mapping; a version outside `build/native-versions.tsv` fails the release with the list of known builds.
+- Tags name the **FFmpeg** version: `v6.1.6.5` publishes 6.1.6.5 and binds FFmpegKit 6.0.4 from the mapping; a version outside `build/native-versions.tsv` fails the release with the list of known builds.
 - `upstream-drift.yml` (daily) runs `build/check-upstream.sh` over `build/upstream.tsv` and files one issue per group.
 
 ## Testing

@@ -24,7 +24,7 @@ on:
       native-version:
         description: >
           FFmpegKit native version to bind against. Defaults to FFmpegKitNativeVersion in
-          Directory.Build.props; set it to build a package for an older LTS line, e.g. 6.0.3.
+          Directory.Build.props; set it to build a package for an older LTS line, e.g. 6.0.4.
         required: false
         default: ''
         type: string
