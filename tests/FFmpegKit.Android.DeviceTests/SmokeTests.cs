@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using System.Threading;
 using Ffmpegkit.Droid;
 // This assembly's own root namespace is 'FFmpegKit', which would otherwise shadow the bound type.
@@ -177,11 +178,26 @@ public static class SmokeTests
 
     private static void ReportsBundledFFmpegVersion(string workingDirectory)
     {
-        // Cross-checks the version the release notes extract from libavcodec.so at build time
-        // against what the library reports at runtime.
+        // Cross-checks what the library reports at runtime against the FFmpeg the package is named
+        // after, which run-device-tests.sh resolves through build/native-versions.tsv and compiles
+        // into this assembly. A build with nothing compiled in fails too, or a project that stops
+        // passing the version would turn this back into the non-empty check it used to be.
+        var expected = typeof(SmokeTests).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "ExpectedFFmpegVersion")?.Value;
+        Assert(
+            !string.IsNullOrWhiteSpace(expected),
+            "No expected FFmpeg version was compiled in. Build through run-device-tests.sh.");
+
         var version = FFmpegKitConfig.FFmpegVersion;
 
         Assert(!string.IsNullOrWhiteSpace(version), "FFmpegKitConfig.FFmpegVersion was empty.");
+
+        // Upstream builds from a release tag, so the runtime reports n8.1.3 for FFmpeg 8.1.3.
+        Assert(
+            version!.TrimStart('n') == expected,
+            $"The package maps to FFmpeg {expected}, but the library reports {version}.");
+
         Report($"ffmpeg={version} ffmpegkit={FFmpegKitConfig.Version} lts={FFmpegKitConfig.IsLTSBuild}");
     }
 
