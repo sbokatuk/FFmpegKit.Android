@@ -207,6 +207,8 @@ FFmpegKitConfig.EnableLogCallback(log => Debug.WriteLine(log.Message));
 
 Clear either hook by name — `FFmpegKitConfig.DisableLogCallback()` / `DisableStatisticsCallback()` — instead of the `EnableLogCallback((ILogCallback)null)` incantation. The delegates are held by FFmpegKit until cleared, so anything they capture stays alive too.
 
+**Run alongside the garbage collector.** Mono on Android restarts threads after a garbage collection with `SIGXCPU`, which FFmpeg would otherwise take for itself the first time a command runs, leaving the app frozen at the next collection. These packages call `FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu)` the first time you use `FFmpegKit`, `FFmpegKitConfig` or `AsyncFFmpegExecuteTask`, so there is nothing to do unless your own Java code starts FFmpeg without going through them.
+
 **Use managed enums.** `SessionState` and `Level` are Java enums, so they cannot be used in a `switch`, and comparing them with `==` compares managed peer references rather than the underlying constants. `ToManaged()` converts at the boundary.
 
 ### Working with user-picked files

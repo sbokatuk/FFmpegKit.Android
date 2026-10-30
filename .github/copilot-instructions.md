@@ -59,6 +59,7 @@ Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the r
 - Never confuse the two version numbers: package versions and tags name **FFmpeg**, `.aar` file names use **FFmpegKit**, and every pairing must exist as a row in `build/native-versions.tsv`.
 - Never rename `Ffmpegkit.Droid`; keep the `FFmpegKit.Net.<Variant>.Android` assembly and package ids.
 - Never drop `FFMPEGKIT001` / `FFMPEGKIT002` or move them off `PrepareForBuild`, and never promise 32-bit or minSdk < 24 support.
+- Never remove the `SIGXCPU` opt-out in `Additions/FFmpegKit.Signals.cs`, and keep the device check that guards it: Mono restarts threads with that signal, so without it the first garbage collection after an FFmpeg command freezes the app.
 - Keep the GPL/LGPL split exact (`-gpl` variants are `MIT AND GPL-3.0-only`, the rest `MIT AND LGPL-3.0-only`, texts packed from `licenses/`); the sample must keep referencing a non-GPL variant.
 - Never point the tests or the sample at nuget.org instead of `./artifacts`; never hand-edit merged packages — fix `build/merge-packages.py`.
 - Do not bypass the release `guard` job, and do not tag a version outside the mapping.

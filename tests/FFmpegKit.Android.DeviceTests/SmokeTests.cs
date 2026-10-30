@@ -33,6 +33,7 @@ public static class SmokeTests
         new("parses media values regardless of locale", TypedValuesIgnoreAmbientCulture),
         new("reports progress while encoding", ProgressIsReported),
         new("reports the bundled ffmpeg version", ReportsBundledFFmpegVersion),
+        new("survives a garbage collection after ffmpeg has run", SurvivesGarbageCollection),
     ];
 
     private static void TypedMediaInformationIsParsed(string workingDirectory)
@@ -135,6 +136,38 @@ public static class SmokeTests
 
         var last = captured[^1];
         Report($"{captured.Length} samples, last: {last.Percent:P0} at {last.Position}, frame {last.VideoFrameNumber}, speed {last.Speed:0.##}x");
+    }
+
+    private static void SurvivesGarbageCollection(string workingDirectory)
+    {
+        // Mono restarts the threads it stopped for a collection with SIGXCPU, and FFmpeg takes
+        // that signal for itself unless told not to. Everything above allocates too little to
+        // trigger a collection, so without this check the failure only shows up in a real app.
+        // There is nothing to assert: without the fix GC.Collect never returns and the run ends
+        // with no verdict. A second thread allocates throughout, so that a collection has a
+        // running managed thread to stop and restart.
+        var output = Path.Combine(workingDirectory, "output.mp4");
+        Assert(File.Exists(output), "The encode check must run before this one.");
+        AssertSuccess(FFmpeg.Execute($"-y -i \"{output}\" -c:v mpeg4 \"{output}.again.mp4\""), "encode before collecting");
+
+        using var stop = new ManualResetEventSlim();
+        var allocator = Task.Run(() =>
+        {
+            while (!stop.IsSet)
+            {
+                GC.KeepAlive(new byte[4096]);
+            }
+        });
+
+        for (var i = 0; i < 3; i++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        stop.Set();
+        Assert(allocator.Wait(TimeSpan.FromSeconds(10)), "The allocating thread never resumed.");
+        Report($"{GC.CollectionCount(0)} collections");
     }
 
     private static void ReportsBundledFFmpegVersion(string workingDirectory)
