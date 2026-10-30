@@ -4,7 +4,8 @@
 #   tag-prefix  the release tag's prefix - the version follows it (v3.12.1.4 -> prefix "v")
 #   parent      owner/repo of the repository holding the pin
 #   packages    space-separated package ids the parent pins from this repository's release
-# A released tag whose prefix matches no row notifies nobody.
+# A released tag whose prefix matches no row notifies nobody. Neither does a release on an older
+# track: the parent pins the default one, see the notify-parents job in release.yml.
 #
 # tag-prefix	parent	packages
 v	sbokatuk/FFMpegKit.Net	FFmpegKit.Net.Full.Android
