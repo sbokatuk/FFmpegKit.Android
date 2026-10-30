@@ -13,12 +13,16 @@ permissions:
 
 jobs:
   version:
-    name: resolve beta version
+    name: resolve beta version and older tracks
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.resolve.outputs.version }}
+      tracks: ${{ steps.tracks.outputs.tracks }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The merge commit and its parents, which is all the older-track diff below reads.
+          fetch-depth: 2
 
       - id: resolve
         run: |
@@ -35,6 +39,14 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Building ${version}" >> "$GITHUB_STEP_SUMMARY"
 
+      - id: tracks
+        run: |
+          # This runs on the merge commit, so its first parent is the base branch as this pull
+          # request would merge into it, and the diff is exactly what merging would change.
+          tracks="$(./.github/scripts/tracks-to-verify.sh HEAD^1 HEAD)"
+          echo "tracks=${tracks}" >> "$GITHUB_OUTPUT"
+          echo "Older tracks to verify: \`${tracks}\`" >> "$GITHUB_STEP_SUMMARY"
+
   build:
     name: build
     needs: version
@@ -42,13 +54,52 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
 
+  # The tracks that are not the default, so no pull request ever packed them, and release.yml packs a
+  # tag without verifying it. On demand rather than on every pull request: nothing reaches an older
+  # track until its release note merges, and its .aar only changes with its mapping row, so
+  # tracks-to-verify.sh runs a track on exactly those. Running them all the time would double this
+  # workflow for pull requests that ship nothing on those tracks, and the extra emulators are more
+  # chances for a slow boot to hold up the betas. A public repository pays nothing for the minutes.
+  #
+  # A beta of the track's own FFmpeg, because run-device-tests.sh reads the FFmpeg the package has to
+  # contain from the version. They stay in this run: publish below only takes the default track's.
+  older-tracks:
+    name: older track ${{ matrix.track.ffmpeg }}
+    needs: version
+    if: needs.version.outputs.tracks != '[]'
+    strategy:
+      # Tracks bind different .aar files, so one failing says nothing about the other.
+      fail-fast: false
+      matrix:
+        track: ${{ fromJSON(needs.version.outputs.tracks) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ matrix.track.ffmpeg }}-beta.${{ github.event.number }}.${{ github.run_number }}
+      native-version: ${{ matrix.track.ffmpegkit }}
+      artifact-suffix: -${{ matrix.track.ffmpeg }}
+      # Both API levels, because FFmpegKit 7.1.6 was only refused on API 31, and both variants,
+      # because that hit Video on both ABIs and Audio on x86_64 alone. net8 is where those failures
+      # and the freeze were reproduced, and sample-run covers net10.
+      e2e-variants: '["Audio", "Video"]'
+      e2e-target-frameworks: '["net8.0-android34.0"]'
+      e2e-api-levels: '[31, 35]'
+
   publish:
     name: publish beta to nuget.org
-    needs: [version, build]
+    needs: [version, build, older-tracks]
     runs-on: ubuntu-latest
     # Forked pull requests get no OIDC token for this repository, so the exchange would fail with
     # a confusing error. Those PRs still build and test; only the publish step is skipped.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    #
+    # The rest is here because older-tracks is skipped on most pull requests, and a skipped
+    # dependency skips this job as well unless the condition says what it accepts. !cancelled() is
+    # what lets the condition be evaluated at all. A failed version job fails this too: it skips
+    # build, and build has to have succeeded.
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && contains(fromJSON('["success", "skipped"]'), needs.older-tracks.result)
+      && github.event.pull_request.head.repo.full_name == github.repository
     # Must match the Environment on the nuget.org trusted publishing policy for this workflow.
     environment: nuget.org
     permissions:
