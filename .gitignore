@@ -358,3 +358,5 @@ MigrationBackup/
 
 # Device test output
 device-tests-logcat.txt
+sample-test-logcat.txt
+sample-test-screen.png

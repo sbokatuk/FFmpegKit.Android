@@ -38,6 +38,12 @@
 
   <ItemGroup>
     <PackageReference Include="FFmpegKit.Net.$(FFmpegKitVariant).Android" Version="$(FFmpegKitPackageVersion)" />
+
+    <!--
+      The FFmpeg this package has to contain, for ReportsBundledFFmpegVersion to compare against at
+      runtime. run-device-tests.sh passes it; an empty value fails that check rather than skip it.
+    -->
+    <AssemblyMetadata Include="ExpectedFFmpegVersion" Value="$(FFmpegKitExpectedFFmpegVersion)" />
   </ItemGroup>
 
 </Project>

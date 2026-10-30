@@ -53,11 +53,18 @@ printf '{ "sdk": { "version": "%s", "rollForward": "latestFeature" } }\n' "${sdk
 package_id="ffmpegkit.net.$(printf '%s' "${VARIANT}" | tr '[:upper:]' '[:lower:]').android"
 rm -rf "${HOME}/.nuget/packages/${package_id}/${VERSION}"
 
-echo "==> installing device tests (variant=${VARIANT}, version=${VERSION}, tfm=${TARGET_FRAMEWORK}, sdk=${sdk_version})"
+# What the package must contain. Package versions are <FFmpeg>.<revision>, or
+# <FFmpeg>-beta.<pr>.<run> on a pull request, so the first three parts name the FFmpeg, and the
+# resolver stops a version the mapping does not know. The test app checks the value at runtime.
+ffmpeg_version="$(printf '%s' "${VERSION%%-*}" | cut -d. -f1-3)"
+"${REPO_ROOT}/build/resolve-versions.sh" --ffmpeg "${ffmpeg_version}" > /dev/null
+
+echo "==> installing device tests (variant=${VARIANT}, version=${VERSION}, ffmpeg=${ffmpeg_version}, tfm=${TARGET_FRAMEWORK}, sdk=${sdk_version})"
 ( cd "${SDK_DIR}" && dotnet build "${PROJECT}" \
     --configuration Release \
     -p:FFmpegKitVariant="${VARIANT}" \
     -p:FFmpegKitPackageVersion="${VERSION}" \
+    -p:FFmpegKitExpectedFFmpegVersion="${ffmpeg_version}" \
     -p:FFmpegKitDeviceTargetFramework="${TARGET_FRAMEWORK}" \
     -p:RuntimeIdentifier="${DEVICE_RID}" \
     -t:Install )

@@ -282,7 +282,7 @@ FFMPEGKIT_DEVICE_RID=android-arm64 \
     ./.github/scripts/run-device-tests.sh Video 8.1.3.1 net10.0-android36.0
 ```
 
-Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
+Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs. The script works out which FFmpeg that version stands for from `build/native-versions.tsv`, and the run fails if the library reports a different one.
 
 ## Example app
 
@@ -299,7 +299,12 @@ It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` on
 
 The sample targets API 26 rather than the package's own floor of 24, because it previews results with CommunityToolkit's `MediaElement`, which requires 26. Your own app can still target 24.
 
-CI builds it on every pull request, against the package produced by that same run; release runs skip it, because the tagged commit was already verified on its pull request. It consumes the package through a `PackageReference` exactly as you would, so it is what catches an API that no longer matches the documentation here — it is only built, never deployed, since the device tests already prove the binding runs.
+CI builds it on every pull request, against the package produced by that same run; release runs skip it, because the tagged commit was already verified on its pull request. It consumes the package through a `PackageReference` exactly as you would, so it is what catches an API that no longer matches the documentation here. CI also deploys it to an emulator, launches it, runs one conversion and requires the success text, and an ANR fails the run. Passing device tests are not proof that a real app works: an earlier package froze this app while they were all green.
+
+```sh
+# the same script CI uses; needs a running device or emulator
+FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-sample-test.sh 8.1.3.1
+```
 
 It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.sln` does not require the MAUI workload.
 
@@ -307,7 +312,7 @@ It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.s
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke tests (net8 and net10 legs in parallel), then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
+| [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests, the emulator smoke tests (all 8 variants on net10, plus Video and Audio on net8) and a run of the sample on an emulator, then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
 | [`release.yml`](.github/workflows/release.yml) | tag `v*` | Packs at the tag's version, the tests having already run on that commit's pull request, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
 
 Both call the reusable [`build.yml`](.github/workflows/build.yml).

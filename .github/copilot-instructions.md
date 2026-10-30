@@ -42,7 +42,7 @@ dotnet test tests/FFmpegKit.Android.PackageTests      # validate the packed .nup
 
 Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the reusable `build.yml` (`verify` input: true on PRs, false on releases).
 
-- Pull request → pack all eight variants as `<FFmpegVersion>-beta.<pr>.<run>`, package tests, MAUI sample builds (net8 + net10), emulator smoke tests, then publish the betas to nuget.org. Forked PRs build and test but skip publishing. Betas cannot be deleted, only unlisted.
+- Pull request → pack all eight variants as `<FFmpegVersion>-beta.<pr>.<run>`, package tests, MAUI sample builds (net8 + net10), emulator smoke tests (all eight variants on net10, plus Video and Audio on net8), a run of the sample on the emulator, then publish the betas to nuget.org. Forked PRs build and test but skip publishing. Betas cannot be deleted, only unlisted.
 - Merging `docs/release-notes/<version>.md` to `main` is the release: `auto-release.yml` tags the merge `v<version>` and dispatches `release.yml`, whose `guard` job proves the commit is an ancestor of the default branch before anything publishes.
 - Tags name the **FFmpeg** version: `v6.1.6.5` publishes 6.1.6.5 and binds FFmpegKit 6.0.4 from the mapping; a version outside `build/native-versions.tsv` fails the release with the list of known builds.
 - `upstream-drift.yml` (daily) runs `build/check-upstream.sh` over `build/upstream.tsv` and files one issue per group.
@@ -51,7 +51,8 @@ Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the r
 
 - Run `dotnet test tests/FFmpegKit.Android.PackageTests` before every pull request, after packing. Narrow it while iterating with `FFMPEGKIT_VARIANTS=Video`.
 - Run the device smoke tests when touching `Additions/`, `Transforms/`, the `.aar`/jar wiring or the consumer `.targets`:
-  `FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-device-tests.sh Video 8.1.3.1 net10.0-android36.0` — arguments are variant, packed version in `./artifacts`, target framework. The emulator or device must be `x86_64` or `arm64-v8a`.
+  `FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-device-tests.sh Video 8.1.3.1 net10.0-android36.0` — arguments are variant, packed version in `./artifacts`, target framework. The emulator or device must be `x86_64` or `arm64-v8a`. The script derives the FFmpeg the package must contain from that version and the test app fails if the library reports another, so build the test app through it.
+- Run the sample the same way when touching the sample or the binding's threading: `FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-sample-test.sh 8.1.3.1` — it launches the app, runs one conversion, requires the success text and fails on an ANR. Arguments are the packed version in `./artifacts` and an optional target framework.
 
 ## Hard rules
 
@@ -59,7 +60,7 @@ Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the r
 - Never confuse the two version numbers: package versions and tags name **FFmpeg**, `.aar` file names use **FFmpegKit**, and every pairing must exist as a row in `build/native-versions.tsv`.
 - Never rename `Ffmpegkit.Droid`; keep the `FFmpegKit.Net.<Variant>.Android` assembly and package ids.
 - Never drop `FFMPEGKIT001` / `FFMPEGKIT002` or move them off `PrepareForBuild`, and never promise 32-bit or minSdk < 24 support.
-- Never remove the `SIGXCPU` opt-out in `Additions/FFmpegKit.Signals.cs`, and keep the device check that guards it: Mono restarts threads with that signal, so without it the first garbage collection after an FFmpeg command freezes the app.
+- Never remove the `SIGXCPU` opt-out in `Additions/FFmpegKit.Signals.cs`, and keep the device check and the sample run that guard it: Mono restarts threads with that signal, so without it the first garbage collection after an FFmpeg command freezes the app.
 - Keep the GPL/LGPL split exact (`-gpl` variants are `MIT AND GPL-3.0-only`, the rest `MIT AND LGPL-3.0-only`, texts packed from `licenses/`); the sample must keep referencing a non-GPL variant.
 - Never point the tests or the sample at nuget.org instead of `./artifacts`; never hand-edit merged packages — fix `build/merge-packages.py`.
 - Do not bypass the release `guard` job, and do not tag a version outside the mapping.
