@@ -40,8 +40,8 @@ The fork currently publishes three lines, each with all eight variants:
 
 | FFmpegKit | Bundled FFmpeg | ABIs | minSdk |
 | --- | --- | --- | --- |
-| `6.0.3` | `n6.1.6` | `arm64-v8a`, `x86_64` | 24 |
-| `7.1.6` | `n7.1.5` | `arm64-v8a`, `x86_64` | 24 |
+| `6.0.4` | `n6.1.6` | `arm64-v8a`, `x86_64` | 24 |
+| `7.1.7` | `n7.1.5` | `arm64-v8a`, `x86_64` | 24 |
 | `8.1.9` | `n8.1.3` | `arm64-v8a`, `x86_64` | 24 |
 
 **FFmpegKit's version is not FFmpeg's.** FFmpegKit `8.1.9` packages FFmpeg `n8.1.3`; the fork versions its own releases independently of the FFmpeg it pins. The bundled version above is read out of the shipped `libavcodec.so`, and every generated release note states it, because upstream's own notes mention other FFmpeg versions in passing and are easy to misread.
@@ -52,18 +52,18 @@ Both constraints are surfaced at build time in consuming apps by a small `.targe
 
 ### Releasing an older line
 
-Tags name the FFmpeg version: **`v6.1.6.4` publishes `6.1.6.4`** and builds against the FFmpegKit release that packages FFmpeg 6.1.6, looked up in [`build/native-versions.tsv`](build/native-versions.tsv). The fourth component is the binding revision and any prerelease suffix is ignored when resolving (`v8.1.2.4-rc.1` → FFmpeg `8.1.2`). A tag naming a version that is not in the mapping fails the release with the list of known builds, so an old-style tag like `v8.1.7.4` cannot be published by mistake. No branch or `Directory.Build.props` edit is needed.
+Tags name the FFmpeg version: **`v6.1.6.5` publishes `6.1.6.5`** and builds against the FFmpegKit release that packages FFmpeg 6.1.6, looked up in [`build/native-versions.tsv`](build/native-versions.tsv). The fourth component is the binding revision and any prerelease suffix is ignored when resolving (`v8.1.2.4-rc.1` → FFmpeg `8.1.2`). A tag naming a version that is not in the mapping fails the release with the list of known builds, so an old-style tag like `v8.1.7.4` cannot be published by mistake. No branch or `Directory.Build.props` edit is needed.
 
 Locally, pass the native version as the second argument:
 
 ```sh
-./src/FFmpegKit.Android/Jars/FetchJars.sh 6.0.3       # .aar files are named after the FFmpegKit release
-./src/FFmpegKit.Android/BuildNugets.sh 6.1.6.4 6.0.3  # package version, FFmpegKit release
+./src/FFmpegKit.Android/Jars/FetchJars.sh 6.0.4       # .aar files are named after the FFmpegKit release
+./src/FFmpegKit.Android/BuildNugets.sh 6.1.6.5 6.0.4  # package version, FFmpegKit release
 ```
 
 NuGet orders `8.1.3` above `6.1.6`, so publishing an older line later does not change what `dotnet add package` resolves by default.
 
-`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar`, and its `.pom` declares them only from FFmpegKit `8.1.9` on, which does nothing for a NuGet consumer, so they are fetched separately and embedded into the binding.
+`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar`, and its `.pom` declares them only from FFmpegKit `6.0.4`, `7.1.7` and `8.1.9` on, which does nothing for a NuGet consumer, so they are fetched separately and embedded into the binding.
 
 ## License
 
@@ -111,8 +111,8 @@ Three FFmpegKit lines are published in parallel, so you can pin to the FFmpeg ge
 | Track | FFmpeg | From FFmpegKit | Install |
 | --- | --- | --- | --- |
 | **`8.*`** (recommended) | `n8.1.3` | 8.1.9 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
-| `7.*` | `n7.1.5` | 7.1.6 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
-| `6.*` | `n6.1.6` | 6.0.3 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
+| `7.*` | `n7.1.5` | 7.1.7 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
+| `6.*` | `n6.1.6` | 6.0.4 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
 
 A package version is **`<FFmpeg version>.<binding revision>`** — `8.1.3.1` is FFmpeg `8.1.3`, binding revision `1`. It deliberately names FFmpeg rather than FFmpegKit, because FFmpegKit's own release numbers do not track FFmpeg: FFmpegKit `8.1.9` packages FFmpeg `n8.1.3`. [`build/native-versions.tsv`](build/native-versions.tsv) maps between the two and is what the release workflow uses to turn a tag into the `.aar` to download.
 

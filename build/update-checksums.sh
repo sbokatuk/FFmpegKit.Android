@@ -18,7 +18,7 @@ set -e
 #
 # Usage:
 #   build/update-checksums.sh          # version from Directory.Build.props
-#   build/update-checksums.sh 7.1.6    # an older line, e.g. when adding a native-versions.tsv row
+#   build/update-checksums.sh 7.1.7    # an older line, e.g. when adding a native-versions.tsv row
 
 cd "$(dirname "$0")/.."
 

@@ -7,7 +7,7 @@ set -e
 # Usage:
 #   ./BuildNugets.sh                          # version from Directory.Build.props
 #   ./BuildNugets.sh 8.1.3.1-local.1          # explicit package version
-#   ./BuildNugets.sh 6.1.6.5-local.1 6.0.3    # ...and bind an older FFmpegKit LTS line
+#   ./BuildNugets.sh 6.1.6.5-local.1 6.0.4    # ...and bind an older FFmpegKit LTS line
 #
 # Use a -local version for anything built on a workstation. NuGet caches by id and version, so a
 # real version number packed here would shadow the published package in the global cache.

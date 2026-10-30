@@ -134,9 +134,9 @@ STAGING=$(mktemp -d)
 trap 'rm -rf "$STAGING"' EXIT
 
 # FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions, which
-# is not bundled in the .aar. Its .pom declares it only from FFmpegKit 8.1.9 on, and no .NET
-# build reads that .pom. Without these two jars every FFmpeg call fails at runtime with
-# NoClassDefFoundError.
+# is not bundled in the .aar. Its .pom declares it only from FFmpegKit 6.0.4, 7.1.7 and 8.1.9 on,
+# and no .NET build reads that .pom. Without these two jars every FFmpeg call fails at runtime
+# with NoClassDefFoundError.
 for artifact in common java; do
     curl -fL --retry 3 --retry-delay 2 --output-dir "$STAGING" -O \
         "https://github.com/tanersener/smart-exception/releases/download/v$SMART_EXCEPTION_VERSION/smart-exception-$artifact-$SMART_EXCEPTION_VERSION.jar"
