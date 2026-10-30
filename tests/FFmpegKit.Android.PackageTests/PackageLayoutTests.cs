@@ -44,7 +44,7 @@ public class PackageLayoutTests
 
             // The variant must match exactly: shipping the audio .aar in the video package would
             // still restore and install, and silently lack the expected codecs. The pattern is
-            // anchored so 'full' cannot be satisfied by 'ffmpeg-kit-full-gpl-8.1.7.aar'.
+            // anchored so 'full' cannot be satisfied by 'ffmpeg-kit-full-gpl-8.1.9.aar'.
             var fileName = Path.GetFileName(aar.FullName);
             Assert.Matches($@"^ffmpeg-kit-{Regex.Escape(Packages.AarName(variant))}-[0-9][0-9.]*\.aar$", fileName);
 
@@ -62,9 +62,10 @@ public class PackageLayoutTests
         foreach (var tfm in Packages.ExpectedTargetFrameworks)
         {
             // FFmpegKitConfig's static initialiser calls com.arthenica.smartexception.java.Exceptions.
-            // It is not in the .aar and not declared in its .pom, so if these jars stop being embedded
-            // the package still builds and installs, then throws NoClassDefFoundError on the first
-            // FFmpeg call. Only an on-device run catches that otherwise.
+            // It is not in the .aar, and nothing here reads the .pom that declares it from 8.1.9 on,
+            // so if these jars stop being embedded the package still builds and installs, then
+            // throws NoClassDefFoundError on the first FFmpeg call. Only an on-device run catches
+            // that otherwise.
             using var projectAar = new ZipArchive(
                 Packages.ReadEntry(package, $"lib/{tfm}/{Packages.AssemblyName(variant)}.aar"));
 

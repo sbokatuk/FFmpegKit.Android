@@ -6,8 +6,8 @@
 
 - One project, `src/FFmpegKit.Android`, produces all eight packages `FFmpegKit.Net.<Variant>.Android` — `Audio|Full|FullGpl|Https|HttpsGpl|Min|MinGpl|Video`, selected by `FFmpegKitBuildType`.
 - Native binaries come from the community fork **[ffmpegkit-maintained/ffmpeg](https://github.com/ffmpegkit-maintained/ffmpeg)** via Maven Central (`dev.ffmpegkit-maintained`). `arthenica/ffmpeg-kit` is archived with its assets deleted and `ffmpeg-kit-next` ships no binaries — do not point anything back at them.
-- **Two version schemes, never interchangeable.** `FFmpegVersion` (8.1.2) is the FFmpeg inside and what package versions are based on; `FFmpegKitNativeVersion` (8.1.7) is the fork release that names the `.aar`. Both live in `Directory.Build.props`; `build/native-versions.tsv` is the single source of truth for the pairing (`6.1.6↔6.0.3`, `7.1.5↔7.1.6`, `8.1.2↔8.1.7`). Convert with `./build/resolve-versions.sh --ffmpeg 8.1.2` or `--ffmpegkit 8.1.7`.
-- Package version = `<FFmpeg version>.<binding revision>`, e.g. `8.1.2.5`. Three tracks publish in parallel; all ship `arm64-v8a` + `x86_64` at minSdk 24, never 32-bit.
+- **Two version schemes, never interchangeable.** `FFmpegVersion` (8.1.3) is the FFmpeg inside and what package versions are based on; `FFmpegKitNativeVersion` (8.1.9) is the fork release that names the `.aar`. Both live in `Directory.Build.props`; `build/native-versions.tsv` is the single source of truth for the pairing (`6.1.6↔6.0.3`, `7.1.5↔7.1.6`, `8.1.2↔8.1.7`, `8.1.3↔8.1.9`). Convert with `./build/resolve-versions.sh --ffmpeg 8.1.3` or `--ffmpegkit 8.1.9`.
+- Package version = `<FFmpeg version>.<binding revision>`, e.g. `8.1.3.1`. Three tracks publish in parallel; all ship `arm64-v8a` + `x86_64` at minSdk 24, never 32-bit.
 - Prerequisites: .NET 8, 9 and 10 SDKs each with the Android workload (the SDK is chosen by the *working directory's* `global.json`), plus Python 3 for the merge step.
 
 ## Build and verify
@@ -16,7 +16,7 @@
 ./src/FFmpegKit.Android/Jars/FetchJars.sh            # download + SHA-256 verify the 8 .aar and 2 .jar files
 ./src/FFmpegKit.Android/Jars/FetchJars.sh --verify    # re-check what is on disk, no downloads
 ./src/FFmpegKit.Android/BuildNugets.sh                # pack all 8 variants (two SDK passes, merged) into ./artifacts
-./src/FFmpegKit.Android/BuildNugets.sh 8.1.2.5 8.1.7  # package version, FFmpegKit release
+./src/FFmpegKit.Android/BuildNugets.sh 8.1.3.1-local.1 8.1.9  # package version, FFmpegKit release
 dotnet test tests/FFmpegKit.Android.PackageTests      # validate the packed .nupkg files
 ```
 
@@ -51,7 +51,7 @@ Everything runs on **ubuntu-latest**. `pr.yml` and `release.yml` both call the r
 
 - Run `dotnet test tests/FFmpegKit.Android.PackageTests` before every pull request, after packing. Narrow it while iterating with `FFMPEGKIT_VARIANTS=Video`.
 - Run the device smoke tests when touching `Additions/`, `Transforms/`, the `.aar`/jar wiring or the consumer `.targets`:
-  `FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-device-tests.sh Video 8.1.2.4 net10.0-android36.0` — arguments are variant, packed version in `./artifacts`, target framework. The emulator or device must be `x86_64` or `arm64-v8a`.
+  `FFMPEGKIT_DEVICE_RID=android-arm64 ./.github/scripts/run-device-tests.sh Video 8.1.3.1 net10.0-android36.0` — arguments are variant, packed version in `./artifacts`, target framework. The emulator or device must be `x86_64` or `arm64-v8a`.
 
 ## Hard rules
 

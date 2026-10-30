@@ -7,13 +7,13 @@
         FFmpegVersion           the FFmpeg the build actually contains, and what package versions
                                 are based on - it is what determines behaviour.
         FFmpegKitNativeVersion  the FFmpegKit release that packages it, which names the .aar to
-                                download. FFmpegKit 8.1.7 packages FFmpeg n8.1.2.
+                                download. FFmpegKit 8.1.9 packages FFmpeg n8.1.3.
 
       build/native-versions.tsv maps between them and is the single source of truth; the pair
       below is the default for this branch and must appear as a row there.
     -->
-    <FFmpegVersion>8.1.2</FFmpegVersion>
-    <FFmpegKitNativeVersion>8.1.7</FFmpegKitNativeVersion>
+    <FFmpegVersion>8.1.3</FFmpegVersion>
+    <FFmpegKitNativeVersion>8.1.9</FFmpegKitNativeVersion>
     <VersionPrefix>$(FFmpegVersion)</VersionPrefix>
 
     <!--
