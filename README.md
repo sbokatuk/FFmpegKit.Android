@@ -3,7 +3,7 @@
 [![NuGet](https://img.shields.io/nuget/v/FFmpegKit.Net.Video.Android?label=nuget)](https://www.nuget.org/packages/FFmpegKit.Net.Video.Android)
 [![release](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml/badge.svg)](https://github.com/sbokatuk/FFmpegKit.Android/actions/workflows/release.yml)
 [![Targets: net8.0 | net9.0 | net10.0](https://img.shields.io/badge/targets-net8.0%20%7C%20net9.0%20%7C%20net10.0-512BD4)](#installation)
-[![ffmpeg 8.1.2](https://img.shields.io/badge/ffmpeg-8.1.2-632CA6)](#about)
+[![ffmpeg 8.1.3](https://img.shields.io/badge/ffmpeg-8.1.3-632CA6)](#about)
 [![Licence: MIT AND LGPL-3.0 or GPL-3.0](https://img.shields.io/badge/licence-MIT%20AND%20LGPL--3.0%20or%20GPL--3.0-orange)](#license)
 
 .NET for Android and .NET MAUI bindings for the native **FFmpegKit** library.
@@ -28,7 +28,7 @@ FFmpegKit has three relevant repositories, and only one of them still ships usab
 | --- | --- | --- |
 | [`arthenica/ffmpeg-kit`](https://github.com/arthenica/ffmpeg-kit) | archived | none — the `v5.1.LTS` release assets were deleted; Maven Central stops at `6.0.LTS` |
 | [`arthenica/ffmpeg-kit-next`](https://github.com/arthenica/ffmpeg-kit-next) | active, the official continuation | none — releases up to `v8.1.0` carry source only, zero binary assets |
-| [`ffmpegkit-maintained/ffmpeg`](https://github.com/ffmpegkit-maintained/ffmpeg) | active community fork | **yes** — published to Maven Central as `dev.ffmpegkit-maintained`, currently `8.1.7` |
+| [`ffmpegkit-maintained/ffmpeg`](https://github.com/ffmpegkit-maintained/ffmpeg) | active community fork | **yes** — published to Maven Central as `dev.ffmpegkit-maintained`, currently `8.1.9` |
 
 So the `.aar` files come from the community fork, via Maven Central — see [`FetchJars.sh`](src/FFmpegKit.Android/Jars/FetchJars.sh). It keeps the original `com.arthenica.ffmpegkit` Java API, so the binding and its `Ffmpegkit.Droid` namespace are unaffected by the switch. Should `ffmpeg-kit-next` start publishing binaries, moving over would be a change to `FetchJars.sh` and `FFmpegKitNativeVersion` only.
 
@@ -42,9 +42,9 @@ The fork currently publishes three lines, each with all eight variants:
 | --- | --- | --- | --- |
 | `6.0.3` | `n6.1.6` | `arm64-v8a`, `x86_64` | 24 |
 | `7.1.6` | `n7.1.5` | `arm64-v8a`, `x86_64` | 24 |
-| `8.1.7` | `n8.1.2` | `arm64-v8a`, `x86_64` | 24 |
+| `8.1.9` | `n8.1.3` | `arm64-v8a`, `x86_64` | 24 |
 
-**FFmpegKit's version is not FFmpeg's.** FFmpegKit `8.1.7` packages FFmpeg `n8.1.2`; the fork versions its own releases independently of the FFmpeg it pins. The bundled version above is read out of the shipped `libavcodec.so`, and every generated release note states it, because upstream's own notes mention other FFmpeg versions in passing and are easy to misread.
+**FFmpegKit's version is not FFmpeg's.** FFmpegKit `8.1.9` packages FFmpeg `n8.1.3`; the fork versions its own releases independently of the FFmpeg it pins. The bundled version above is read out of the shipped `libavcodec.so`, and every generated release note states it, because upstream's own notes mention other FFmpeg versions in passing and are easy to misread.
 
 None of them ship 32-bit binaries, so dropping back to an older line does not restore `armeabi-v7a` or `x86` support.
 
@@ -61,9 +61,9 @@ Locally, pass the native version as the second argument:
 ./src/FFmpegKit.Android/BuildNugets.sh 6.1.6.4 6.0.3  # package version, FFmpegKit release
 ```
 
-NuGet orders `8.1.2` above `6.1.6`, so publishing an older line later does not change what `dotnet add package` resolves by default.
+NuGet orders `8.1.3` above `6.1.6`, so publishing an older line later does not change what `dotnet add package` resolves by default.
 
-`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar` and not declared in its `.pom`, so they are fetched separately and embedded into the binding.
+`FFmpegKitConfig` also needs the two `smart-exception` jars at runtime. They are not bundled in the `.aar`, and its `.pom` declares them only from FFmpegKit `8.1.9` on, which does nothing for a NuGet consumer, so they are fetched separately and embedded into the binding.
 
 ## License
 
@@ -110,11 +110,11 @@ Three FFmpegKit lines are published in parallel, so you can pin to the FFmpeg ge
 
 | Track | FFmpeg | From FFmpegKit | Install |
 | --- | --- | --- | --- |
-| **`8.*`** (recommended) | `n8.1.2` | 8.1.7 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
+| **`8.*`** (recommended) | `n8.1.3` | 8.1.9 | `dotnet add package FFmpegKit.Net.Video.Android --version "8.*"` |
 | `7.*` | `n7.1.5` | 7.1.6 | `dotnet add package FFmpegKit.Net.Video.Android --version "7.*"` |
 | `6.*` | `n6.1.6` | 6.0.3 | `dotnet add package FFmpegKit.Net.Video.Android --version "6.*"` |
 
-A package version is **`<FFmpeg version>.<binding revision>`** — `8.1.2.4` is FFmpeg `8.1.2`, binding revision `4`. It deliberately names FFmpeg rather than FFmpegKit, because FFmpegKit's own release numbers do not track FFmpeg: FFmpegKit `8.1.7` packages FFmpeg `n8.1.2`. [`build/native-versions.tsv`](build/native-versions.tsv) maps between the two and is what the release workflow uses to turn a tag into the `.aar` to download.
+A package version is **`<FFmpeg version>.<binding revision>`** — `8.1.3.1` is FFmpeg `8.1.3`, binding revision `1`. It deliberately names FFmpeg rather than FFmpegKit, because FFmpegKit's own release numbers do not track FFmpeg: FFmpegKit `8.1.9` packages FFmpeg `n8.1.3`. [`build/native-versions.tsv`](build/native-versions.tsv) maps between the two and is what the release workflow uses to turn a tag into the `.aar` to download.
 
 A floating range therefore always resolves to the newest bindings for that FFmpeg line and never crosses into another one, which is what makes `8.*` safe to leave in a project file. Pin an exact version instead if you would rather approve every binding update yourself.
 
@@ -130,14 +130,14 @@ These packages replace the `Xamarin.FFmpegKit.*.Android` ones, which are no long
 
 ```diff
 -<PackageReference Include="Xamarin.FFmpegKit.Video.Android" Version="4.5.1" />
-+<PackageReference Include="FFmpegKit.Net.Video.Android" Version="8.1.2.4" />
++<PackageReference Include="FFmpegKit.Net.Video.Android" Version="8.1.3.1" />
 ```
 
 **The `Ffmpegkit.Droid` namespace is unchanged**, so your `using` directives and calls stay as they are. It deliberately does not follow the package name: a namespace rooted at `FFmpegKit` containing a type also called `FFmpegKit` makes `FFmpegKit.Execute(...)` resolve the namespace instead of the class and fail to compile.
 
 The assembly is now `FFmpegKit.Net.<Variant>.Android` (was `FFmpegKit.<Variant>.Android`), which matters only if you reference it by assembly name or use reflection.
 
-Note that the native library also moved on from the archived `arthenica` builds — see [Where the native binaries come from](#where-the-native-binaries-come-from) — so upgrading from `4.5.1` is a jump from FFmpegKit 4.5 to 8.1.7, not just a repackaging.
+Note that the native library also moved on from the archived `arthenica` builds — see [Where the native binaries come from](#where-the-native-binaries-come-from) — so upgrading from `4.5.1` is a jump from FFmpegKit 4.5 to 8.1.9, not just a repackaging.
 
 ## Usage
 
@@ -207,6 +207,8 @@ FFmpegKitConfig.EnableLogCallback(log => Debug.WriteLine(log.Message));
 
 Clear either hook by name — `FFmpegKitConfig.DisableLogCallback()` / `DisableStatisticsCallback()` — instead of the `EnableLogCallback((ILogCallback)null)` incantation. The delegates are held by FFmpegKit until cleared, so anything they capture stays alive too.
 
+**Run alongside the garbage collector.** Mono on Android restarts threads after a garbage collection with `SIGXCPU`, which FFmpeg would otherwise take for itself the first time a command runs, leaving the app frozen at the next collection. These packages call `FFmpegKitConfig.IgnoreSignal(Signal.Sigxcpu)` the first time you use `FFmpegKit`, `FFmpegKitConfig` or `AsyncFFmpegExecuteTask`, so there is nothing to do unless your own Java code starts FFmpeg without going through them.
+
 **Use managed enums.** `SessionState` and `Level` are Java enums, so they cannot be used in a `switch`, and comparing them with `==` compares managed peer references rather than the underlying constants. `ToManaged()` converts at the boundary.
 
 ### Working with user-picked files
@@ -248,7 +250,7 @@ Python 3 is also needed, for the package merge step.
 ```sh
 ./src/FFmpegKit.Android/Jars/FetchJars.sh          # downloads the .aar/.jar files
 ./src/FFmpegKit.Android/BuildNugets.sh             # packs all 8 variants into ./artifacts
-./src/FFmpegKit.Android/BuildNugets.sh 8.1.2.4-rc.1  # ...or with an explicit package version
+./src/FFmpegKit.Android/BuildNugets.sh 8.1.3.1-rc.1  # ...or with an explicit package version
 ```
 
 `FetchJars.sh` reads the FFmpegKit version from `FFmpegKitNativeVersion` in `Directory.Build.props`, the same property the `.csproj` uses to pick the `.aar`, so the two cannot drift apart. Pass a version to override it (`./FetchJars.sh 8.2.0`) when trying a newer upstream build before committing to it — record its checksum baseline first with `./build/update-checksums.sh 8.2.0`, since the fetch refuses to run against a line that has no committed baseline. `./FetchJars.sh --verify` re-checks the files already on disk without downloading anything.
@@ -277,7 +279,7 @@ FFMPEGKIT_VARIANTS=Video dotnet test tests/FFmpegKit.Android.PackageTests  # onl
 ```sh
 # builds, installs, runs and reports - the same script CI uses
 FFMPEGKIT_DEVICE_RID=android-arm64 \
-    ./.github/scripts/run-device-tests.sh Video 8.1.2.4 net10.0-android36.0
+    ./.github/scripts/run-device-tests.sh Video 8.1.3.1 net10.0-android36.0
 ```
 
 Arguments are the variant, the package version in `./artifacts`, and which of the package's target frameworks to exercise. The emulator must be `x86_64` or `arm64-v8a`; the `.aar` ships no other ABIs.
@@ -288,16 +290,16 @@ Arguments are the variant, the package version in `./artifacts`, and which of th
 
 ```sh
 ./src/FFmpegKit.Android/BuildNugets.sh                    # produce ./artifacts first
-dotnet build samples/FFmpegKit.Android.Example -t:Install     # deploy to a running device/emulator
+dotnet build samples/FFmpegKit.Android.Example -f net9.0-android35.0 -t:Install     # deploy to a running device/emulator
 ```
 
-It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegVersion`; pass `-p:FFmpegKitVersion=8.1.2.4-rc.1` to point it at a specific build.
+It resolves `FFmpegKit.Net.Full.Android` from `./artifacts` through the local feed in `NuGet.config`, **not** from nuget.org, so it always exercises your local build. The version defaults to `FFmpegVersion`; pass `-p:FFmpegKitVersion=8.1.3.1-rc.1` to point it at a specific build.
 
 It references the `Full` (LGPL) variant deliberately — swapping to a `-gpl` one would make the sample itself GPL-3.0.
 
 The sample targets API 26 rather than the package's own floor of 24, because it previews results with CommunityToolkit's `MediaElement`, which requires 26. Your own app can still target 24.
 
-CI builds it on every pull request and release, against the package produced by that same run. It consumes the package through a `PackageReference` exactly as you would, so it is what catches an API that no longer matches the documentation here — it is only built, never deployed, since the device tests already prove the binding runs.
+CI builds it on every pull request, against the package produced by that same run; release runs skip it, because the tagged commit was already verified on its pull request. It consumes the package through a `PackageReference` exactly as you would, so it is what catches an API that no longer matches the documentation here — it is only built, never deployed, since the device tests already prove the binding runs.
 
 It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.sln` does not require the MAUI workload.
 
@@ -306,7 +308,7 @@ It is deliberately **not** in `FFmpegKit.sln`, so that `dotnet build FFmpegKit.s
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
 | [`pr.yml`](.github/workflows/pr.yml) | pull request | Builds and packs all 8 variants as `<version>-beta.<pr>.<run>`, runs package tests and the emulator smoke tests (net8 and net10 legs in parallel), then publishes the betas to nuget.org. Forked PRs build and test but skip publishing, since they cannot read secrets. |
-| [`release.yml`](.github/workflows/release.yml) | tag `v*` | Same build and tests at the tag's version, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
+| [`release.yml`](.github/workflows/release.yml) | tag `v*` | Packs at the tag's version, the tests having already run on that commit's pull request, publishes to nuget.org, then creates a GitHub release with the changelog since the previous tag and links to every package. |
 
 Both call the reusable [`build.yml`](.github/workflows/build.yml).
 
