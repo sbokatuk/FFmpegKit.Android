@@ -240,10 +240,24 @@ jobs:
         run: |
           # The packages themselves are not attached: they are ~50 MB each and nuget.org is the
           # distribution channel. The notes link to every published package instead.
+          #
+          # GitHub gives Latest to the newest release whatever its version, so anything behind the
+          # current Latest has to opt out: 6.1.6.5 took it from 8.1.3.1 that way. This asks GitHub
+          # rather than using default-track, which reads the tagged commit and can't see that the
+          # default has moved on. If Latest can't be read, GitHub's own choice stands: the packages
+          # are already published, and a wrong label is cheaper than a missing release.
+          latest_flag=''
+          current=$(gh release view --json tagName --jq .tagName 2> /dev/null || true)
+          if [ -n "${current}" ] && \
+             [ "$(printf '%s\n%s\n' "${current#v}" "${VERSION}" | sort -V | tail -1)" != "${VERSION}" ]; then
+            latest_flag='--latest=false'
+          fi
+
           gh release create "${GITHUB_REF_NAME}" \
             --title "${VERSION}" \
             --notes-file release-notes.md \
-            ${{ needs.version.outputs.prerelease == 'true' && '--prerelease' || '' }}
+            ${{ needs.version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+            ${latest_flag}
 
   # The parent repositories pin these packages by exact version; tell them what just shipped
   # rather than leaving it to their daily drift check. Who cares, and about which packages,
