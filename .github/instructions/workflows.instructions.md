@@ -13,5 +13,6 @@ applyTo: ".github/workflows/*.yml"
 - `auto-release.yml` tags only release notes **added** (`--diff-filter=A`) by a push to `main`, only four-part versions, and dispatches `release.yml` at the tag — a tag pushed with `GITHUB_TOKEN` does not trigger `on: push: tags`, so the dispatch is required, as is `release.yml`'s `workflow_dispatch` trigger.
 - The pack job caches `src/FFmpegKit.Android/Jars` keyed on the native version, and re-runs `FetchJars.sh --verify` even on a cache hit. Keep that verification step.
 - Emulator jobs must stay `x86_64` (the `.aar` ships arm64-v8a and x86_64 only), keep KVM enabled and keep the disk-cleanup step; the AVD needs ~7.2 GB free.
+- The `e2e` matrix runs every variant, one job each: each is a different `.aar`, and nothing else loads its native code. Do not narrow it to save time, and keep the Audio leg on API 31: it is the only one that can see an x86_64-specific load failure, which API 35 hides. `sample-run` deploys the sample because the device checks once passed on a package that froze it; keep it a gate on publishing betas.
 - `upstream-drift.yml` only orchestrates: what is watched belongs in `build/upstream.tsv`, how it is checked in `build/check-upstream.sh`.
 - Keep the explanatory comments — they record failures that have already happened once (NETSDK1112, emulator boot timeouts, silent OIDC failures).

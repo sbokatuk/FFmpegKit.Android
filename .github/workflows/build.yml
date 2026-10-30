@@ -1,7 +1,7 @@
 name: build
 
 # Reusable pipeline: builds every FFmpegKit variant at a given version, validates the packed
-# packages, runs the on-device smoke tests, and uploads the packages as an artifact.
+# packages, runs the on-device smoke tests and the sample, and uploads the packages as an artifact.
 # Callers (pr.yml, release.yml) decide the version and what to do with the result.
 
 on:
@@ -28,21 +28,26 @@ on:
         required: false
         default: ''
         type: string
-      e2e-variant:
-        description: Which variant the emulator smoke test installs and runs.
+      e2e-variants:
+        description: >
+          Which variants the emulator smoke test installs and runs, as a JSON array - one matrix
+          job per entry, and one per entry of e2e-target-frameworks. All eight, because each is a
+          different .aar with its own libraries: a Video-only run hid a wrong assumption about
+          Min, and nothing else in this workflow loads the other seven's native code. A subset
+          saves runner minutes that a public repository does not pay for.
         required: false
-        default: Video
+        default: '["Audio", "Full", "FullGpl", "Https", "HttpsGpl", "Min", "MinGpl", "Video"]'
         type: string
       e2e-target-frameworks:
         description: >
-          Which of the package's target frameworks the emulator smoke test runs against, as a
-          JSON array - one matrix job per entry. Defaults to the two extremes: net8, the oldest
-          asset set and the one nothing else exercises, and net10, whose assets are produced by
-          the merge step in BuildNugets.sh and so are the only ones that could be grafted in
-          wrong. net9 sits between them and comes out of the same pack pass as net8, so testing
-          it too would buy little for the runner minutes.
+          Which of the package's target frameworks every variant runs against, as a JSON array.
+          Defaults to net10, whose assets are produced by the merge step in BuildNugets.sh, per
+          variant, and so are the only ones that could be grafted in wrong. net8, the oldest
+          asset set and the one nothing else exercises, gets the two legs listed in the e2e job.
+          net9 sits between them and comes out of the same pack pass as net8, so testing it too
+          would buy little for the runner minutes.
         required: false
-        default: '["net8.0-android34.0", "net10.0-android36.0"]'
+        default: '["net10.0-android36.0"]'
         type: string
 
 env:
@@ -222,17 +227,33 @@ jobs:
               -p:FFmpegKitVersion="${{ inputs.version }}" )
 
   e2e:
-    name: emulator smoke test (${{ matrix.target-framework }})
+    name: emulator smoke test (${{ matrix.variant }}, ${{ matrix.target-framework }}, API ${{ matrix.api-level }})
     if: ${{ inputs.verify }}
     timeout-minutes: 60
     needs: pack
     runs-on: ubuntu-latest
     strategy:
-      # fail-fast off: when one target framework breaks it is worth knowing whether the other did
-      # too, since "net8 only" and "both" point at very different causes.
+      # fail-fast off: when one leg breaks it is worth knowing which others did too, since "net8
+      # only" and "everywhere", or "Min only" and "every variant", point at very different causes.
+      # Separate jobs rather than one emulator working through a list: they add no wall-clock time
+      # running side by side, and a failed boot re-runs one leg instead of all of them.
       fail-fast: false
       matrix:
+        variant: ${{ fromJSON(inputs.e2e-variants) }}
         target-framework: ${{ fromJSON(inputs.e2e-target-frameworks) }}
+        api-level: [35]
+        include:
+          - variant: Video
+            target-framework: net8.0-android34.0
+            api-level: 35
+          # Audio is the one variant whose load behaviour has depended on the ABI. FFmpegKit 7.1.6
+          # and 6.0.3 mapped RELRO past the end of a library in five variants on both ABIs, and in
+          # Audio on x86_64 alone, so an arm64 run says nothing about it. The failure only shows
+          # on an older Android: dlopen rejected those libraries on API 31 and accepted them on
+          # API 35, which is why every other leg here would pass.
+          - variant: Audio
+            target-framework: net8.0-android34.0
+            api-level: 31
     steps:
       - uses: actions/checkout@v4
 
@@ -304,19 +325,105 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           # The .aar ships arm64-v8a and x86_64 only, so the emulator must be x86_64.
-          api-level: 35
+          api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
-          script: ./.github/scripts/run-device-tests.sh "${{ inputs.e2e-variant }}" "${{ inputs.version }}" "${{ matrix.target-framework }}"
+          script: ./.github/scripts/run-device-tests.sh "${{ matrix.variant }}" "${{ inputs.version }}" "${{ matrix.target-framework }}"
 
       - name: Upload device logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: device-test-logs-${{ matrix.target-framework }}
+          name: device-test-logs-${{ matrix.variant }}-${{ matrix.target-framework }}-api${{ matrix.api-level }}
           path: device-tests-logcat.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The sample used to be built here and never run, so nothing noticed when a published package
+  # froze it on its first conversion: the device checks allocated too little to trigger the
+  # collection that hangs. One leg is enough, because that freeze came from the package and not from
+  # a framework, and net10 is the newest framework the sample builds for.
+  sample-run:
+    name: sample run on emulator
+    if: ${{ inputs.verify }}
+    timeout-minutes: 30
+    needs: pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Install the MAUI Android workload for the net10 band
+        run: |
+          # From a scratch directory for the same reason as the sample build above: the repository
+          # global.json pins .NET 9, and the band owns the runtime packs.
+          dir="${RUNNER_TEMP}/workload-net10"
+          mkdir -p "${dir}"
+          ( cd "${dir}" \
+            && dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep '^10\.' | tail -1 | cut -d' ' -f1)" --force \
+            && dotnet workload install maui-android )
+
+      - name: Set up the Android SDK platforms
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36'
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts
+
+      - name: Free disk space for the emulator
+        run: |
+          # The same space problem as the e2e job, whose comment has the failure this prevents.
+          echo "before: $(df -h --output=avail / | tail -1) available"
+          sudo rm -rf /usr/local/lib/android/sdk/ndk || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/powershell || true
+          sudo rm -rf /usr/local/lib/node_modules || true
+          docker image prune --all --force || true
+          echo "after:  $(df -h --output=avail / | tail -1) available"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the sample on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          # The .aar ships arm64-v8a and x86_64 only, so the emulator must be x86_64. The profile
+          # is there for its height: the script reads the status label off the accessibility tree,
+          # which leaves out whatever has scrolled off screen.
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./.github/scripts/run-sample-test.sh "${{ inputs.version }}"
+
+      - name: Upload sample logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-test-logs
+          path: |
+            sample-test-logcat.txt
+            sample-test-screen.png
           if-no-files-found: ignore
           retention-days: 7
