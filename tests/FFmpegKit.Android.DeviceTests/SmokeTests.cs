@@ -150,14 +150,19 @@ public static class SmokeTests
         Assert(File.Exists(output), "The encode check must run before this one.");
         AssertSuccess(FFmpeg.Execute($"-y -i \"{output}\" -c:v mpeg4 \"{output}.again.mp4\""), "encode before collecting");
 
+        using var started = new ManualResetEventSlim();
         using var stop = new ManualResetEventSlim();
         var allocator = Task.Run(() =>
         {
             while (!stop.IsSet)
             {
                 GC.KeepAlive(new byte[4096]);
+                started.Set();
             }
         });
+
+        // Task.Run only queues the work, and without this the collections could all finish first.
+        Assert(started.Wait(TimeSpan.FromSeconds(10)), "The allocating thread never started.");
 
         for (var i = 0; i < 3; i++)
         {
